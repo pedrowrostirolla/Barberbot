@@ -1,0 +1,665 @@
+:root {
+    --primary-color: #4f46e5;
+    --primary-color-hover: #4338ca;
+    --secondary-color: #6b7280;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --background-color: #f3f4f6;
+    --card-background: #ffffff;
+    --text-color: #1f2937;
+    --border-color: #e5e7eb;
+    --btn-desconto-active: #c084fc; /* Roxo para desconto */
+}
+
+/* --- Base e Estrutura --- */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Navbar --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--card-background);
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+#navbar-nav-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-btn {
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.nav-btn:hover {
+    background-color: var(--background-color);
+    color: var(--primary-color);
+}
+
+.nav-btn.active {
+    background-color: var(--primary-color);
+    color: var(--card-background);
+}
+
+.nav-btn.active:hover {
+    background-color: var(--primary-color-hover);
+    color: var(--card-background);
+}
+
+/* --- Container e Telas --- */
+
+.container {
+    flex-grow: 1;
+    padding: 2rem;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.screen {
+    display: none;
+    padding-bottom: 50px; /* Espaço extra para o footer */
+}
+
+.screen.active {
+    display: block;
+}
+
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.header-section h2 {
+    font-size: 1.75rem;
+    color: var(--text-color);
+}
+
+/* --- Componentes de Formulário e Botões --- */
+
+.btn {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-color-hover);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #4b5563;
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #d97706;
+}
+
+.btn-warning-desconto {
+    background-color: var(--btn-desconto-active);
+    color: white;
+}
+.btn-warning-desconto:hover {
+    background-color: #a855f7;
+}
+
+.full-width {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Estilos de Formulário */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.form-group input:not([type="checkbox"]), .form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus, .form-group select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    height: auto;
+}
+
+.checkbox-group label {
+    margin-bottom: 0;
+}
+
+.price-groupbox {
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+}
+
+.price-groupbox legend {
+    font-weight: 600;
+    color: var(--primary-color);
+    padding: 0 5px;
+}
+
+/* --- Filtros --- */
+.filters-card {
+    background-color: var(--card-background);
+    padding: 1.25rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.filters-card .input-icon {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+}
+
+.filters-card .input-icon input {
+    width: 100%;
+    padding-left: 2.5rem;
+}
+
+.filters-card .input-icon i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-color);
+}
+
+
+/* --- Tabelas --- */
+
+.table-container {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th, table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+table th {
+    background-color: var(--background-color);
+    font-weight: 600;
+    color: var(--secondary-color);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+table tbody tr:hover:not(.selectable-table tbody tr.selected) {
+    background-color: #f9fafb;
+}
+
+.selectable-table tbody tr.selected {
+    background-color: #eef2ff; /* Cor clara para seleção */
+    border-left: 4px solid var(--primary-color);
+}
+
+.selectable-table tbody tr {
+    cursor: pointer;
+}
+
+/* Status e Ícones na Tabela Principal */
+.status-icon {
+    display: inline-block;
+    margin-left: 5px;
+    cursor: help;
+    position: relative;
+}
+
+.status-icon:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    background-color: var(--text-color);
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 10px;
+    position: absolute;
+    z-index: 10;
+    width: 200px;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+.estoque-alerta {
+    color: var(--danger-color);
+}
+.desconto-ativo {
+    color: var(--btn-desconto-active);
+}
+
+.btn-venda-rapida {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-venda-rapida:hover {
+    background-color: var(--primary-color-hover);
+}
+
+/* Tabela da Fila */
+#tabelaFila tbody tr.atendimento {
+    background-color: #fffbeb;
+    color: var(--warning-color);
+    border-left: 4px solid var(--warning-color);
+}
+#tabelaFila tbody tr.atendimento td {
+    color: var(--warning-color);
+    font-weight: 600;
+}
+#tabelaFila tbody tr.atendimento.selected {
+    background-color: #fef3c7;
+}
+
+.fila-counter-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--card-background);
+    padding: 1.25rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.fila-counter {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.fila-counter strong {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.fila-counter-actions .actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* --- Telas de Configurações --- */
+.config-card {
+    background-color: var(--card-background);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+}
+
+.config-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+/* --- Modais (Janelas Pop-up) --- */
+
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 100; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.4); 
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: var(--card-background);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 5px;
+}
+
+.close {
+    color: var(--secondary-color);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: var(--danger-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Modal de Confirmação */
+.center-text {
+    text-align: center;
+}
+
+.confirm-icon {
+    font-size: 3rem;
+    color: var(--warning-color);
+    margin-bottom: 15px;
+}
+
+.confirm-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+/* --- Toasts (Notificações) --- */
+
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 101;
+    display: flex;
+    flex-direction: column-reverse; /* Novas notificações aparecem em cima */
+    gap: 10px;
+}
+
+.toast {
+    background-color: var(--card-background);
+    color: var(--text-color);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    min-width: 250px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast i {
+    font-size: 1.25rem;
+}
+
+.toast.success {
+    border-left: 5px solid var(--success-color);
+}
+.toast.success i {
+    color: var(--success-color);
+}
+
+.toast.error {
+    border-left: 5px solid var(--danger-color);
+}
+.toast.error i {
+    color: var(--danger-color);
+}
+
+.toast.primary {
+    border-left: 5px solid var(--primary-color);
+}
+.toast.primary i {
+    color: var(--primary-color);
+}
+
+/* --- Telas de Venda (Específicos) --- */
+
+.venda-card {
+    background-color: var(--card-background);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.itens-venda-container {
+    border: 1px dashed var(--border-color);
+    padding: 1rem;
+    min-height: 150px;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.empty-state-venda {
+    text-align: center;
+    color: var(--secondary-color);
+    padding: 2rem 0;
+}
+.empty-state-venda i {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.item-venda {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.item-venda:last-child {
+    border-bottom: none;
+}
+
+.item-venda-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.95rem;
+}
+.item-venda-info span:first-child {
+    font-weight: 600;
+}
+
+.item-venda-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.item-venda-actions input[type="number"] {
+    width: 60px;
+    padding: 5px;
+    text-align: center;
+}
+
+.btn-remover-item {
+    background: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.venda-resumo-card {
+    background-color: #f9fafb;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.resumo-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border-color);
+    font-weight: 500;
+}
+
+.resumo-item:last-child {
+    border-bottom: none;
+    font-size: 1.15rem;
+    padding-top: 15px;
+}
+
+.resumo-item.total span:last-child {
+    font-weight: 700;
+    color: var(--success-color);
+}
+
+/* Input do modal de seleção de produto */
+#tabelaSelecaoProduto .input-qtde-venda {
+    width: 80px;
+    padding: 5px;
+    text-align: center;
+}
+
+/* Footer */
+.system-footer {
+    padding: 1rem;
+    text-align: center;
+    color: var(--secondary-color);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: auto; /* Garante que fique na parte inferior */
+    background-color: var(--card-background);
+}
