@@ -3,545 +3,502 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EstoquePro - Gerenciamento de Estoque e Serviços</title>
+    <title>EstoquePro - Gerenciamento de Estoque e Vendas</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> 
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="logo"><i class="fa-solid fa-boxes-stacked"></i> EstoquePro</div>
-        <div id="navbar-nav-buttons">
-            <button class="nav-btn active" onclick="navegar('TelaPrincipal')"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
-            <button class="nav-btn" onclick="navegar('TelaVendas')"><i class="fa-solid fa-receipt"></i> Vendas</button>
-            <button class="nav-btn" onclick="navegar('TelaProdutos')"><i class="fa-solid fa-box-open"></i> Produtos</button>
-            <button class="nav-btn" onclick="navegar('TelaEstoque')"><i class="fa-solid fa-warehouse"></i> Estoque</button>
-            <button class="nav-btn" onclick="navegar('TelaConfiguracoes')"><i class="fa-solid fa-gear"></i> Configurações</button>
-        </div>
-    </nav>
+    <div id="toast-container"></div>
 
-    <div class="container">
+    <header class="top-nav">
+        <div class="logo">EstoquePro</div>
+        <nav>
+            <button class="nav-btn active" onclick="navegar('TelaPrincipal')"><i class="fas fa-home"></i> Início</button>
+            <button class="nav-btn" onclick="navegar('TelaNovaVenda')"><i class="fas fa-cash-register"></i> Venda</button>
+            <button class="nav-btn" onclick="navegar('TelaVendas')"><i class="fas fa-history"></i> Histórico Vendas</button>
+            <button class="nav-btn" onclick="navegar('TelaProdutos')"><i class="fas fa-box"></i> Produtos</button>
+            <button class="nav-btn" onclick="navegar('TelaEstoque')"><i class="fas fa-warehouse"></i> Estoque</button>
+            <button class="nav-btn" onclick="navegar('TelaFilaChegada')"><i class="fas fa-users"></i> Fila</button>
+            <button class="nav-btn" onclick="navegar('TelaConfiguracoes')"><i class="fas fa-cog"></i> Configurações</button>
+        </nav>
+    </header>
 
-        <section id="TelaPrincipal" class="screen active">
-            <div class="header-section">
-                <h2>Produtos para venda</h2>
+    <div class="content">
+
+        <div id="TelaPrincipal" class="screen active">
+            <div class="header">
+                <h2><i class="fas fa-home"></i> Painel Principal</h2>
             </div>
+            <div id="avisosEstoqueMinimo" class="mb-20"></div>
 
-            <div class="filters-card">
-                <div class="input-icon">
-                    <i class="fa-solid fa-search"></i>
-                    <input type="text" id="filtroPrincipalDescricao" placeholder="Filtrar por Descrição..." oninput="renderizarTabelaPrincipal()">
-                </div>
-                <div class="input-icon">
-                    <i class="fa-solid fa-comment-dots"></i>
-                    <input type="text" id="filtroPrincipalObs" placeholder="Filtrar por Observação..." oninput="renderizarTabelaPrincipal()">
-                </div>
-                <div class="input-icon">
-                    <i class="fa-solid fa-boxes-stacked"></i>
-                    <input type="number" id="filtroPrincipalQtd" placeholder="Qtde Mínima..." oninput="renderizarTabelaPrincipal()">
-                </div>
+            <div class="card-filtro">
+                <h3>Produtos Disponíveis</h3>
+                <input type="text" id="filtroPrincipal" placeholder="Buscar por nome do produto...">
             </div>
-
+            
             <div class="table-container">
-                <table id="tabelaPrincipal">
+                <table id="tabelaPrincipal" class="data-table">
                     <thead>
                         <tr>
-                            <th>Qtde</th>
                             <th>Descrição</th>
-                            <th>Observação</th>
-                            <th>Preço Venda</th>
+                            <th class="text-right">Preço Original</th>
+                            <th class="text-right">Preço Final</th>
+                            <th>Estoque</th>
                             <th>Ação</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody id="tabelaPrincipalCorpo">
+                        </tbody>
                 </table>
-                <div id="msgVazioPrincipal" class="empty-msg" style="display:none">
-                    <i class="fa-solid fa-face-frown"></i>
-                    <p>Nenhum produto encontrado ou disponível para venda.</p>
-                </div>
             </div>
-        </section>
-        
-        <section id="TelaVendas" class="screen">
-            <div class="header-section">
-                <h2>Histórico de Vendas</h2>
-                <button class="btn btn-primary" onclick="navegar('TelaNovaVenda')"><i class="fa-solid fa-cash-register"></i> Nova Venda</button>
+        </div>
+
+        <div id="TelaProdutos" class="screen">
+            <div class="header">
+                <h2><i class="fas fa-box"></i> Cadastro de Produtos</h2>
             </div>
-            
-            <div class="filters-card">
-                <div class="input-icon" style="flex: 2;">
-                    <i class="fa-solid fa-user"></i>
-                    <input type="text" id="filtroVendasCliente" placeholder="Filtrar por Cliente..." oninput="renderizarTabelaVendas()">
+
+            <div class="actions-bar">
+                <button onclick="abrirModalProduto()" class="btn-primary"><i class="fas fa-plus"></i> Novo Produto</button>
+                <button onclick="abrirModalExclusaoMassa()" class="btn-danger"><i class="fas fa-trash"></i> Excluir Selecionados</button>
+            </div>
+
+            <div class="table-container">
+                <table id="tabelaProdutos" class="data-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="checkAll" onclick="toggleCheckAll(this)"></th>
+                            <th>Descrição</th>
+                            <th>Observação</th>
+                            <th class="text-right">V. Compra</th>
+                            <th class="text-right">Markup</th>
+                            <th class="text-right">V. Venda</th>
+                            <th class="text-right">Estoque</th>
+                            <th>Disponível</th>
+                            <th>Desconto</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaProdutosCorpo">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="TelaEstoque" class="screen">
+            <div class="header">
+                <h2><i class="fas fa-warehouse"></i> Gerenciamento de Estoque</h2>
+            </div>
+
+            <div class="card-filtro">
+                <h3>Produto Selecionado: <span id="estoqueProdutoSelecionado" class="tag-produto">Nenhum</span></h3>
+                <div class="actions-bar-inline">
+                    <input type="text" id="filtroEstoque" placeholder="Buscar produto...">
+                    <div id="containerFiltroEstoqueMinimo" style="display: none;">
+                        <input type="checkbox" id="filtroEstoqueMinimo">
+                        <label for="filtroEstoqueMinimo">Abaixo do Mínimo</label>
+                    </div>
                 </div>
-                <div class="input-icon" style="flex: 2;">
-                    <i class="fa-solid fa-credit-card"></i>
-                    <input type="text" id="filtroVendasPagamento" placeholder="Filtrar por Forma de Pagamento..." oninput="renderizarTabelaVendas()">
+                <div class="actions-bar-inline mt-10">
+                    <button id="btnEntrada" onclick="abrirModalMovimentacao('entrada')" class="btn-success" disabled><i class="fas fa-arrow-up"></i> Entrada</button>
+                    <button id="btnSaida" onclick="abrirModalMovimentacao('saida')" class="btn-danger" disabled><i class="fas fa-arrow-down"></i> Saída</button>
                 </div>
             </div>
 
             <div class="table-container">
-                <table id="tabelaVendas" class="selectable-table">
+                <table id="tabelaEstoque" class="data-table">
                     <thead>
                         <tr>
-                            <th>Data</th>
-                            <th>Cliente</th>
-                            <th>Itens</th>
-                            <th>Pagamento</th>
-                            <th>Valor Total</th>
-                            <th>Ações</th>
+                            <th>Produto</th>
+                            <th>Observação</th>
+                            <th class="text-right">Estoque Atual</th>
+                            <th class="text-right">V. Compra</th>
+                            <th class="text-right">Valor em Estoque</th>
+                            <th>Disponível Venda</th>
+                            <th>Selecionar</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody id="tabelaEstoqueCorpo">
+                        </tbody>
                 </table>
-                <div id="msgVazioVendas" class="empty-msg" style="display:none">
-                    <i class="fa-solid fa-receipt"></i>
-                    <p>Nenhuma venda registrada até o momento.</p>
-                </div>
             </div>
-        </section>
+        </div>
+        
+        <div id="TelaNovaVenda" class="screen">
+            <div class="header">
+                <h2><i class="fas fa-cash-register"></i> Nova Venda</h2>
+            </div>
 
-        <section id="TelaNovaVenda" class="screen">
-            <div class="header-section">
-                <h2>Registro de Nova Venda</h2>
-                <button class="btn btn-secondary" onclick="navegar('TelaVendas')"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
-            </div>
-            
-            <div class="venda-card">
-                <form id="formNovaVenda">
-                    <div class="form-group">
-                        <label for="vendaCliente">Cliente</label>
-                        <input type="text" id="vendaCliente" placeholder="Nome do Cliente (Opcional)">
+            <div class="split-content">
+                <div class="venda-produtos card">
+                    <h3>Produtos Selecionados</h3>
+                    <div class="table-container-venda">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th class="text-right">Valor Final</th>
+                                    <th>Qtde</th>
+                                    <th class="text-right">Total</th>
+                                    <th>Remover</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaNovaVendaCorpo">
+                                </tbody>
+                        </table>
                     </div>
+                </div>
 
+                <div class="venda-resumo card">
+                    <h3>Resumo e Pagamento</h3>
                     <div class="form-group">
-                        <label for="vendaFormaPagamento">Forma de Pagamento</label>
+                        <label for="vendaCliente">Cliente:</label>
+                        <input type="text" id="vendaCliente" placeholder="Nome do Cliente">
+                    </div>
+                    <div class="form-group">
+                        <label for="vendaFormaPagamento">Forma de Pagamento: <span class="required">*</span></label>
                         <select id="vendaFormaPagamento" required>
-                            <option value="">Selecione a Forma</option>
+                            <option value="">Selecione...</option>
                             <option value="Dinheiro">Dinheiro</option>
-                            <option value="Cartao">Cartão de Crédito/Débito</option>
-                            <option value="PIX">PIX</option>
+                            <option value="Cartao Credito">Cartão de Crédito</option>
+                            <option value="Cartao Debito">Cartão de Débito</option>
+                            <option value="Pix">Pix</option>
                         </select>
                     </div>
 
-                    <h3 style="margin-top: 1.5rem; font-size: 1.2rem;"><i class="fa-solid fa-box"></i> Itens da Venda</h3>
-                    <hr style="margin-bottom: 1rem;">
-                    
-                    <div id="itensVendaContainer" class="itens-venda-container">
-                        <div class="empty-state-venda">
-                            <i class="fa-solid fa-basket-shopping"></i>
-                            <p>Nenhum produto adicionado.</p>
+                    <div class="resumo-detalhes">
+                        <p>Subtotal: <span id="vendaSubtotal">R$ 0,00</span></p>
+                        <div class="form-group-inline">
+                            <input type="checkbox" id="vendaAplicaDesconto" onchange="toggleDescontoVenda()">
+                            <label for="vendaAplicaDesconto">Aplicar Desconto Geral (%)</label>
                         </div>
-                    </div>
-                    
-                    <button type="button" class="btn btn-secondary full-width" onclick="abrirModalSelecaoProduto()" style="margin-top: 10px;">
-                        <i class="fa-solid fa-plus"></i> Adicionar Produto
-                    </button>
-                    
-                    <div class="venda-resumo-card">
-                        <div class="resumo-item">
-                            <span>Valor Subtotal:</span>
-                            <span id="vendaSubtotalDisplay">R$ 0,00</span>
+                        <div id="vendaDescontoContainer" style="display: none;">
+                            <input type="number" id="vendaDescontoInput" placeholder="%" min="0" max="100" value="0">
+                            <p>Desconto: <span id="vendaDescontoValor">R$ 0,00</span></p>
                         </div>
-                        <div class="resumo-item">
-                            <div class="checkbox-group" style="align-items: center;">
-                                <input type="checkbox" id="vendaAplicaDesconto" onchange="toggleDescontoVenda(this.checked)">
-                                <label for="vendaAplicaDesconto" style="margin-bottom: 0; cursor: pointer;">Aplica Desconto</label>
-                            </div>
-                            <input type="number" id="vendaDescontoInput" min="0" max="100" step="0.01" value="0.00" oninput="calcularTotalVenda()" disabled style="width: 80px; text-align: right; padding: 5px;">
-                        </div>
-                        <div class="resumo-item total">
-                            <span>Valor Total:</span>
-                            <span id="vendaTotalDisplay">R$ 0,00</span>
-                        </div>
+                        <p class="total">Total a Pagar: <span id="vendaTotal">R$ 0,00</span></p>
                     </div>
 
-                    <button type="button" class="btn btn-success full-width" onclick="faturarVenda()" style="margin-top: 1.5rem;">
-                        <i class="fa-solid fa-money-bill-transfer"></i> Faturar Venda
-                    </button>
-                </form>
-            </div>
-        </section>
-
-
-        <section id="TelaProdutos" class="screen">
-            <div class="header-section">
-                <h2>Cadastro e Gestão de Produtos</h2>
-                <div style="display: flex; gap: 10px;">
-                    <button id="btnExcluirMassa" class="btn btn-danger" style="display:none;" onclick="confirmarExclusaoMassa()">
-                        <i class="fa-solid fa-trash-can"></i> Excluir Selecionados
-                    </button>
-                    <button class="btn btn-primary" onclick="abrirModalProduto()"><i class="fa-solid fa-plus"></i> Novo Produto</button>
-                    <button class="btn btn-secondary" onclick="exportarCSV()"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button>
-                    <button class="btn btn-secondary" onclick="exportarPDF()"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
+                    <button id="btnFaturarVenda" onclick="faturarVenda()" class="btn-primary full-width" disabled><i class="fas fa-check-circle"></i> Faturar Venda</button>
+                    <button onclick="iniciarNovaVenda()" class="btn-secondary full-width mt-10"><i class="fas fa-sync-alt"></i> Limpar Venda</button>
                 </div>
             </div>
+        </div>
 
-            <div class="filters-card">
-                <div class="input-icon" style="flex: 2;">
-                    <i class="fa-solid fa-search"></i>
-                    <input type="text" id="filtroProdutosDescricao" placeholder="Filtrar por Descrição..." oninput="renderizarTabelaProdutos()">
-                </div>
-                <div class="input-icon" style="flex: 2;">
-                    <i class="fa-solid fa-comment-dots"></i>
-                    <input type="text" id="filtroProdutosObs" placeholder="Filtrar por Observação..." oninput="renderizarTabelaProdutos()">
-                </div>
-                <div id="containerFiltroEstoqueMinimo" class="checkbox-group" style="flex: 1; justify-content: flex-end; display: none;">
-                    <input type="checkbox" id="filtroEstoqueMinimo" onchange="renderizarTabelaProdutos()">
-                    <label for="filtroEstoqueMinimo">Estoque Mínimo</label>
-                </div>
+        <div id="TelaVendas" class="screen">
+            <div class="header">
+                <h2><i class="fas fa-history"></i> Histórico de Vendas</h2>
             </div>
 
             <div class="table-container">
-                <table id="tabelaProdutosLista">
+                <table id="tabelaVendas" class="data-table">
                     <thead>
                         <tr>
-                            <th style="width: 50px;"><input type="checkbox" id="checkAll" onchange="toggleSelecionarTodos()"></th>
-                            <th>Descrição</th>
-                            <th>Observação</th>
-                            <th>Preço Venda</th>
-                            <th>Disponível</th>
-                            <th style="width: 150px; text-align: right;">Ações</th>
+                            <th>Data/Hora</th>
+                            <th>Cliente</th>
+                            <th>Forma de Pagamento</th>
+                            <th class="text-right">Valor Total</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody id="tabelaVendasCorpo">
+                        </tbody>
                 </table>
-                <div id="msgVazioProdutos" class="empty-msg" style="display:none">
-                    <i class="fa-solid fa-box-open"></i>
-                    <p>Nenhum produto cadastrado.</p>
-                </div>
+            </div>
+        </div>
+
+        <div id="TelaFilaChegada" class="screen">
+            <div class="header">
+                <h2><i class="fas fa-users"></i> Fila de Clientes / Atendimento</h2>
             </div>
             
-        </section>
-        
-        <section id="TelaEstoque" class="screen">
-            <div class="header-section">
-                <h2>Movimentação de Estoque</h2>
-                <div class="stock-actions">
-                    <button id="btnEntrada" class="btn btn-success" onclick="abrirModalMovimentacao('entrada')" disabled>
-                        <i class="fa-solid fa-arrow-down"></i> Entrada
-                    </button>
-                    <button id="btnSaida" class="btn btn-danger" onclick="abrirModalMovimentacao('saida')" disabled>
-                        <i class="fa-solid fa-arrow-up"></i> Saída
-                    </button>
+            <div id="filaContainer" style="display: none;">
+                <div class="card-filtro">
+                    <div class="fila-resumo">
+                        <p>Barbeiros: <span id="filaBarbeiros" class="tag-primary"></span></p>
+                        <p>Em Atendimento: <span id="filaAtendimentos" class="tag-info"></span></p>
+                        <p>Aguardando: <span id="filaAguardando" class="tag-warning"></span></p>
+                        <p>Tempo Médio: <span class="tag-default"></span></p>
+                    </div>
+                    <div class="actions-bar-inline mt-10">
+                        <button onclick="registrarEntradaCliente()" class="btn-success"><i class="fas fa-user-plus"></i> Novo Cliente</button>
+                        <button id="btnIniciarAtendimento" onclick="marcarEmAtendimento()" class="btn-primary" disabled><i class="fas fa-handshake"></i> Iniciar Atendimento</button>
+                        <button id="btnSaidaAtendimento" onclick="registrarSaidaClienteSelecionado()" class="btn-danger" disabled><i class="fas fa-user-check"></i> Registrar Saída</button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="tabelaFila" class="data-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Cliente</th>
+                                <th>Hora Chegada</th>
+                                <th>Status</th>
+                                <th>Tempo Estimado</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaFilaCorpo">
+                            </tbody>
+                    </table>
                 </div>
             </div>
-
-            <p style="margin-bottom: 1rem; color: #6b7280; font-size: 0.95rem;">
-                <i class="fa-solid fa-hand-pointer"></i> Clique em um produto para registrar movimentações de estoque.
-            </p>
-
-            <div class="table-container">
-                <table id="tabelaEstoque" class="selectable-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Descrição</th>
-                            <th>Estoque Atual</th>
-                            <th>Valor total em estoque</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                <div id="msgVazioEstoque" class="empty-msg" style="display:none">
-                    <i class="fa-solid fa-warehouse"></i>
-                    <p>Nenhum produto cadastrado.</p>
-                </div>
+            <div id="filaDesativada" class="alerta-estoque" style="display: none;">
+                A Fila de Atendimento está desativada nas <a href="#" onclick="navegar('TelaConfiguracoes')">Configurações</a>.
             </div>
-        </section>
+        </div>
 
-        <section id="TelaFilaChegada" class="screen">
-            <div class="header-section">
-                <h2>Gestão da Fila de Clientes</h2>
+        <div id="TelaConfiguracoes" class="screen">
+            <div class="header">
+                <h2><i class="fas fa-cog"></i> Configurações do Sistema</h2>
             </div>
             
-            <div class="fila-counter-actions">
-                <div class="fila-counter">
-                    Clientes na fila: <strong id="contadorClientesAtual">0</strong>
-                </div>
-                <div class="actions">
-                    <button class="btn btn-primary" onclick="registrarEntradaCliente()">
-                        <i class="fa-solid fa-user-plus"></i> Novo Cliente
-                    </button>
-                    <button id="btnEmAtendimento" class="btn btn-warning" onclick="marcarEmAtendimento()" disabled>
-                        <i class="fa-solid fa-handshake"></i> Em atendimento
-                    </button>
-                    <button id="btnSaidaCliente" class="btn btn-danger" onclick="registrarSaidaClienteSelecionado()" disabled>
-                        <i class="fa-solid fa-user-check"></i> Registrar Saída
-                    </button>
-                </div>
-            </div>
+            <div class="settings-grid">
+                
+                <div class="card settings-card">
+                    <h3><i class="fas fa-users"></i> Gerenciamento de Fila</h3>
+                    <div class="form-group-inline">
+                        <input type="checkbox" id="configControlaFila" onchange="toggleControlaFila(this.checked)">
+                        <label for="configControlaFila">Habilitar Controle de Fila</label>
+                    </div>
 
-            <p style="margin-top: 1rem; color: #6b7280; font-size: 0.95rem;">
-                <i class="fa-solid fa-clock"></i> Tempo médio por cliente: **<span id="displayTempoMedio">30</span> min** | Barbeiros: **<span id="displayQtdBarbeiros">1</span>**
-            </p>
-
-            <div class="table-container" style="margin-top: 1rem;">
-                <table id="tabelaFila" class="selectable-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;"></th>
-                            <th>Identificação</th>
-                            <th>Chegada</th>
-                            <th>Previsão de Atendimento</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                <div id="msgFilaVazia" class="empty-msg" style="display:none">
-                    <i class="fa-solid fa-people-line"></i>
-                    <p>A fila está vazia. Registre a entrada de novos clientes.</p>
-                </div>
-            </div>
-        </section>
-
-
-        <section id="TelaConfiguracoes" class="screen">
-            <div class="header-section">
-                <h2>Configurações do Sistema</h2>
-            </div>
-
-            <div class="config-card">
-                <h3><i class="fa-solid fa-people-group"></i> Configuração da Fila de Clientes</h3>
-                <hr style="margin: 10px 0;">
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="configControlaFila" onchange="toggleControlaFila(this.checked)">
-                    <label for="configControlaFila">Habilitar Controle de Fila de Chegada</label>
+                    <div id="configFilaContainer" style="display: none;">
+                        <div class="form-group mt-10">
+                            <label for="configQtdBarbeiros">Quantidade de Barbeiros/Atendentes:</label>
+                            <input type="number" id="configQtdBarbeiros" min="1" value="1">
+                            <button onclick="salvarQtdBarbeiros()" class="btn-secondary-small">Salvar</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="configTempoMedio">Tempo Médio de Atendimento (min):</label>
+                            <input type="number" id="configTempoMedio" min="1" value="30">
+                            <button onclick="salvarTempoMedioAtendimento()" class="btn-secondary-small">Salvar</button>
+                        </div>
+                    </div>
                 </div>
                 
-                <div id="configFilaContainer" style="display:none; margin-top: 15px;">
-                    <div class="form-group">
-                        <label for="configTempoMedio">Tempo Médio por Cliente (minutos)</label>
-                        <input type="number" id="configTempoMedio" value="30" min="1" onchange="salvarTempoMedioAtendimento()">
+                <div class="card settings-card">
+                    <h3><i class="fas fa-warehouse"></i> Controle de Estoque</h3>
+                    <div class="form-group-inline">
+                        <input type="checkbox" id="configControlaEstoqueMinimo" onchange="toggleControlaEstoqueMinimo(this.checked)">
+                        <label for="configControlaEstoqueMinimo">Habilitar Aviso de Estoque Mínimo</label>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="configQtdBarbeiros">Quantidade de Barbeiros/Atendentes</label>
-                        <input type="number" id="configQtdBarbeiros" value="1" min="1" onchange="salvarQtdBarbeiros()">
+
+                    <div id="configEstoqueMinimoContainer" style="display: none;">
+                         <div class="form-group mt-10">
+                            <label for="configQtdeMinima">Quantidade Mínima para Alerta:</label>
+                            <input type="number" id="configQtdeMinima" min="0" value="5">
+                            <button onclick="salvarEstoqueMinimo()" class="btn-secondary-small">Salvar</button>
+                        </div>
                     </div>
                 </div>
+
+                <div class="card settings-card full-width">
+                    <h3><i class="fas fa-database"></i> Backup e Limpeza de Dados</h3>
+                    <p class="warning-text">Os dados estão salvos apenas no seu navegador (localStorage).</p>
+                    <div class="actions-bar-inline">
+                        <button onclick="exportarBackupJson()" class="btn-secondary"><i class="fas fa-download"></i> Exportar Backup (JSON)</button>
+                        <button onclick="abrirModalImportacao()" class="btn-secondary"><i class="fas fa-upload"></i> Importar Backup (JSON)</button>
+                        <button onclick="limparTodosOsDados()" class="btn-danger"><i class="fas fa-eraser"></i> Limpar TODOS os Dados</button>
+                    </div>
+                </div>
+
             </div>
-            
-            <div class="config-card" style="margin-top: 1.5rem;">
-                <h3><i class="fa-solid fa-arrow-down-9-1"></i> Configuração de Estoque Mínimo</h3>
-                <hr style="margin: 10px 0;">
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="configControlaEstoqueMinimo" onchange="toggleControlaEstoqueMinimo(this.checked)">
-                    <label for="configControlaEstoqueMinimo">Habilitar Controle de Estoque Mínimo</label>
-                </div>
-                
-                <div id="configEstoqueMinimoContainer" style="display:none; margin-top: 15px;">
-                    <div class="form-group">
-                        <label for="configQtdeMinima">Quantidade Mínima de Estoque (Alerta)</label>
-                        <input type="number" id="configQtdeMinima" value="5" min="0" onchange="salvarEstoqueMinimo()">
-                    </div>
-                </div>
-            </div>
-
-            <button class="btn btn-primary full-width" style="margin-top: 2rem;" onclick="salvarTodasConfiguracoes()">
-                <i class="fa-solid fa-save"></i> Salvar Configurações
-            </button>
+        </div>
+    </div>
 
 
-            <div class="config-card" style="margin-top: 2rem;">
-                <h3><i class="fa-solid fa-database"></i> Backup e Restauração de Dados</h3>
-                <hr style="margin: 10px 0;">
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <button class="btn btn-primary" onclick="exportarBackupJson()">
-                        <i class="fa-solid fa-download"></i> Exportar Backup (.json)
-                    </button>
-                    <button class="btn btn-danger" onclick="confirmarLimpezaDados()">
-                        <i class="fa-solid fa-broom"></i> Limpar TODOS os Dados
-                    </button>
-                </div>
-                
-                <div class="form-group">
-                    <label for="importFileInput">Importar Backup (.json)</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="file" id="importFileInput" accept=".json" style="flex: 1;">
-                        <button class="btn btn-secondary" onclick="confirmarImportacaoDados()">
-                            <i class="fa-solid fa-upload"></i> Importar e Substituir
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </div><footer class="system-footer">
-        EstoquePro © 2025 | 9DEV
-    </footer>
-
-    <div id="modalProduto" class="modal" style="display: none;">
+    <div id="modalProduto" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="fecharModais()">&times;</span>
-            <h3 id="modalProdutoTitle">Novo Produto</h3>
+            <span class="close-btn" onclick="fecharModais()">&times;</span>
+            <h3 id="modalProdutoTitulo">Novo Produto</h3>
             <form id="formProduto" onsubmit="salvarProduto(event)">
                 <input type="hidden" id="prodId">
                 <div class="form-group">
-                    <label for="prodDescricao">Descrição do Produto*</label>
+                    <label for="prodDescricao">Descrição: <span class="required">*</span></label>
                     <input type="text" id="prodDescricao" required>
                 </div>
                 <div class="form-group">
-                    <label for="prodObs">Observação (ex: Cor/Tamanho/Marca)</label>
-                    <input type="text" id="prodObs">
+                    <label for="prodObs">Observação:</label>
+                    <textarea id="prodObs"></textarea>
+                </div>
+
+                <div class="form-group-inline">
+                    <div>
+                        <label for="prodValorCompra">Valor de Compra (R$):</label>
+                        <input type="number" id="prodValorCompra" step="0.01" min="0" value="0.00">
+                    </div>
+                    <div>
+                        <label for="prodMarkup">Markup (%):</label>
+                        <input type="number" id="prodMarkup" min="0" value="0" oninput="calcularValorVenda()">
+                    </div>
+                </div>
+
+                <div class="form-group-inline">
+                    <div>
+                        <label for="prodValorVenda">Valor de Venda (R$): <span class="required">*</span></label>
+                        <input type="number" id="prodValorVenda" step="0.01" min="0" required>
+                    </div>
+                    <div>
+                        <label for="prodQtde">Quantidade Inicial/Atual (Estoque):</label>
+                        <input type="number" id="prodQtde" min="0" value="0">
+                    </div>
                 </div>
                 
-                <fieldset class="price-groupbox">
-                    <legend>Precificação</legend>
-                    <div style="display: flex; gap: 15px;">
-                        <div class="form-group" style="flex: 1;">
-                            <label for="prodValorCompra">Valor de Compra (Custo)</label>
-                            <input type="number" id="prodValorCompra" step="0.01" min="0" value="0.00" oninput="calcularValorVenda()">
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label for="prodMarkup">Markup (%)</label>
-                            <input type="number" id="prodMarkup" step="0.01" min="0" value="0" oninput="calcularValorVenda()">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="prodValorVenda">Valor de Venda (Preço Final)</label>
-                        <input type="number" id="prodValorVenda" step="0.01" min="0" value="0.00" required>
-                    </div>
-                </fieldset>
-
-                <div style="display: flex; gap: 15px; margin-top: 15px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label for="prodQtde">Quantidade Inicial em Estoque</label>
-                        <input type="number" id="prodQtde" min="0" value="0" required>
-                        <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 5px;">*Alterar estoque na aba 'Estoque'.</p>
-                    </div>
-                    <div class="form-group checkbox-group" style="flex: 1; align-items: flex-start; padding-top: 1.8rem;">
-                        <input type="checkbox" id="prodDisponivel" checked>
-                        <label for="prodDisponivel">Disponível para Venda?</label>
-                    </div>
+                <div class="form-group-inline">
+                    <input type="checkbox" id="prodDisponivel">
+                    <label for="prodDisponivel">Disponível para Venda</label>
                 </div>
 
-                <button type="submit" class="btn btn-primary full-width">Salvar Produto</button>
+                <button type="submit" class="btn-primary">Salvar Produto</button>
             </form>
         </div>
     </div>
 
-    <div id="modalDescontoProduto" class="modal" style="display: none;">
+    <div id="modalMovimentacao" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="fecharModais()">&times;</span>
-            <h3 style="color: var(--warning-color);"><i class="fa-solid fa-percent"></i> Aplicar Desconto</h3>
-            <p id="descontoProdutoNome" style="font-weight: 600; margin-bottom: 15px;"></p>
-            <form id="formDesconto" onsubmit="aplicarDesconto(event)">
-                <input type="hidden" id="descontoProdId">
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="descontoAtivo" onchange="document.getElementById('descontoPercentual').disabled = !this.checked">
-                    <label for="descontoAtivo">Desconto Ativo</label>
-                </div>
-                <div class="form-group">
-                    <label for="descontoPercentual">Percentual de Desconto (%)</label>
-                    <input type="number" id="descontoPercentual" step="0.01" min="0" max="100" value="0.00" required>
-                    <p style="font-size: 0.85rem; color: #9ca3af; margin-top: 5px;">
-                        Preço Base de Venda: <strong id="valorVendaBase">R$ 0,00</strong>
-                    </p>
-                </div>
-                <button type="submit" class="btn btn-warning full-width">Salvar Desconto</button>
-            </form>
-        </div>
-    </div>
-    
-    <div id="modalMovimento" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close" onclick="fecharModais()">&times;</span>
-            <h3 id="tituloMovimento">Movimentação</h3>
-            <p id="produtoMovimentoNome" style="font-weight: 600; margin-bottom: 15px;"></p>
-            <form id="formMovimento" onsubmit="salvarMovimentacao(event)">
+            <span class="close-btn" onclick="fecharModais()">&times;</span>
+            <h3 id="modalMovimentoTitulo">Movimentação de Estoque</h3>
+            <form onsubmit="salvarMovimentacao(event)">
                 <input type="hidden" id="movimentoTipo">
+                <p>Produto: <strong id="movimentoProdutoNome"></strong></p>
+                <p>Estoque Atual: <strong id="movimentoEstoqueAtual"></strong></p>
+
                 <div class="form-group">
-                    <label for="movimentoQtd">Quantidade a Movimentar</label>
+                    <label for="movimentoQtd">Quantidade:</label>
                     <input type="number" id="movimentoQtd" min="1" required>
                 </div>
-                <button type="submit" class="btn btn-primary full-width">Registrar Movimentação</button>
+
+                <button type="submit" class="btn-primary">Registrar Movimento</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalDesconto" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharModais()">&times;</span>
+            <h3>Aplicar Desconto</h3>
+            <form onsubmit="aplicarDesconto(event)">
+                <input type="hidden" id="descontoProdId">
+                <p>Produto: <strong id="descontoNome"></strong></p>
+
+                <div class="form-group-inline">
+                    <input type="checkbox" id="descontoAtivo">
+                    <label for="descontoAtivo">Desconto Ativo</label>
+                </div>
+
+                <div class="form-group">
+                    <label for="descontoPercentual">Percentual de Desconto (%):</label>
+                    <input type="number" id="descontoPercentual" min="0" max="100" value="0" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Salvar Desconto</button>
             </form>
         </div>
     </div>
     
-    <div id="modalSelecaoProduto" class="modal" style="display: none;">
-        <div class="modal-content" style="width: 700px;">
-            <span class="close" onclick="fecharModais()">&times;</span>
-            <h3><i class="fa-solid fa-magnifying-glass"></i> Selecionar Produtos</h3>
-            <p style="color: #6b7280; margin-bottom: 15px;">Selecione os produtos disponíveis para adicionar à venda.</p>
-            
-            <div class="form-group">
-                <input type="text" id="filtroModalProduto" placeholder="Buscar produto..." oninput="renderizarTabelaSelecaoProduto()">
+    <div id="modalExclusaoMassa" class="modal">
+        <div class="modal-content small-modal">
+            <span class="close-btn" onclick="fecharModais()">&times;</span>
+            <h3>Confirmação de Exclusão</h3>
+            <p>Tem certeza que deseja excluir os <strong id="exclusaoMassaQtde">0</strong> produtos selecionados?</p>
+            <div class="actions-bar-inline">
+                <button onclick="fecharModais()" class="btn-secondary">Cancelar</button>
+                <button onclick="executarExclusaoMassa()" class="btn-danger">Excluir Permanentemente</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalDetalhesVenda" class="modal">
+        <div class="modal-content large-modal">
+            <span class="close-btn" onclick="fecharModais()">&times;</span>
+            <h3>Detalhes da Venda</h3>
+            <div class="venda-detalhes-grid">
+                <p><strong>ID:</strong> <span id="detalhesVendaId"></span></p>
+                <p><strong>Data:</strong> <span id="detalhesVendaData"></span></p>
+                <p><strong>Cliente:</strong> <span id="detalhesVendaCliente"></span></p>
+                <p><strong>Pagamento:</strong> <span id="detalhesVendaPagamento"></span></p>
+                <p><strong>Subtotal:</strong> <span id="detalhesVendaSubtotal"></span></p>
+                <p><strong>Desconto:</strong> <span id="detalhesVendaDesconto"></span></p>
+                <p class="total"><strong>Total:</strong> <span id="detalhesVendaTotal"></span></p>
             </div>
             
-            <div class="table-container" style="max-height: 400px; overflow-y: auto;">
-                <table id="tabelaSelecaoProduto" class="selectable-table">
+            <h4>Itens da Venda</h4>
+            <div class="table-container-venda">
+                <table class="data-table">
                     <thead>
                         <tr>
-                            <th style="width: 50px;"></th>
                             <th>Produto</th>
-                            <th>Preço Venda</th>
-                            <th>Qtde em Estoque</th>
-                            <th style="width: 120px;">Qtde</th>
+                            <th class="text-right">Valor Unitário</th>
+                            <th>Qtde</th>
+                            <th class="text-right">Total</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody id="detalhesVendaItensCorpo"></tbody>
                 </table>
             </div>
-            
-            <button class="btn btn-primary full-width" onclick="adicionarProdutosSelecionados()" style="margin-top: 1rem;">
-                <i class="fa-solid fa-check"></i> Adicionar à Venda
-            </button>
         </div>
     </div>
 
-    <div id="modalEdicaoVenda" class="modal" style="display: none;">
+    <div id="modalEdicaoVenda" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="fecharModais()">&times;</span>
-            <h3 id="modalEdicaoVendaTitle"><i class="fa-solid fa-edit"></i> Editar Venda</h3>
-            <form id="formEdicaoVenda" onsubmit="salvarEdicaoVenda(event)">
+            <span class="close-btn" onclick="fecharModais()">&times;</span>
+            <h3>Editar Venda</h3>
+            <form onsubmit="salvarEdicaoVenda(event)">
                 <input type="hidden" id="edicaoVendaId">
-
-                <p style="font-weight: 600; margin-bottom: 15px;">Itens e Valores da Venda não podem ser alterados.</p>
+                <p class="total">Total da Venda: <span id="edicaoVendaTotal"></span> (Não Editável)</p>
 
                 <div class="form-group">
-                    <label for="edicaoVendaCliente">Cliente</label>
-                    <input type="text" id="edicaoVendaCliente" placeholder="Nome do Cliente (Opcional)">
+                    <label for="edicaoVendaCliente">Cliente:</label>
+                    <input type="text" id="edicaoVendaCliente">
                 </div>
-
                 <div class="form-group">
-                    <label for="edicaoVendaFormaPagamento">Forma de Pagamento</label>
+                    <label for="edicaoVendaFormaPagamento">Forma de Pagamento:</label>
                     <select id="edicaoVendaFormaPagamento" required>
-                        <option value="">Selecione a Forma</option>
                         <option value="Dinheiro">Dinheiro</option>
-                        <option value="Cartao">Cartão de Crédito/Débito</option>
-                        <option value="PIX">PIX</option>
+                        <option value="Cartao Credito">Cartão de Crédito</option>
+                        <option value="Cartao Debito">Cartão de Débito</option>
+                        <option value="Pix">Pix</option>
                     </select>
                 </div>
-
-                <div class="venda-resumo-card" style="padding: 1rem; margin-bottom: 1.5rem;">
-                    <p style="text-align: center; margin-bottom: 5px;">Valor Total Faturado:</p>
-                    <p id="edicaoVendaTotalDisplay" class="resumo-item total" style="font-size: 1.4rem; justify-content: center; border: none; padding-top: 0;">R$ 0,00</p>
-                </div>
-
-                <button type="submit" class="btn btn-primary full-width">
-                    <i class="fa-solid fa-save"></i> Salvar Alterações
-                </button>
+                <button type="submit" class="btn-primary">Salvar Alterações</button>
             </form>
         </div>
     </div>
-    
-    <div id="modalConfirmacao" class="modal" style="display: none;">
-        <div class="modal-content center-text" style="width: 400px;">
-            <span class="close" onclick="fecharModais()">&times;</span>
-            <i class="fa-solid fa-triangle-exclamation confirm-icon"></i>
-            <p id="textoConfirmacao" style="font-size: 1.1rem; margin-bottom: 0;"></p>
-            <div class="confirm-actions">
-                <button id="btnConfirmarAcao" class="btn btn-danger"><i class="fa-solid fa-check"></i> Sim, Confirmar</button>
-                <button class="btn btn-secondary" onclick="fecharModais()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-            </div>
+
+    <div id="modalEdicaoFila" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharModais()">&times;</span>
+            <h3>Editar Cliente na Fila</h3>
+            <form onsubmit="salvarEdicaoFila(event)">
+                <input type="hidden" id="edicaoFilaId">
+                <div class="form-group">
+                    <label for="edicaoFilaNome">Nome / Identificação:</label>
+                    <input type="text" id="edicaoFilaNome" required>
+                </div>
+                <div class="form-group">
+                    <label for="edicaoFilaStatus">Status:</label>
+                    <select id="edicaoFilaStatus" required>
+                        <option value="Aguardando">Aguardando</option>
+                        <option value="Em Atendimento">Em Atendimento</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Salvar</button>
+            </form>
         </div>
     </div>
 
-    <div id="toast-container"></div>
+    <div id="modalImportacao" class="modal">
+        <div class="modal-content small-modal">
+            <span class="close-btn" onclick="fecharModais()">&times;</span>
+            <h3>Importar Dados</h3>
+            <p>Selecione o arquivo de backup (JSON) para substituir os dados atuais.</p>
+            <input type="file" id="fileInput" accept=".json" onchange="importarDados(event)">
+            <p class="warning-text mt-10">Esta ação irá **sobrescrever** todos os dados salvos!</p>
+        </div>
+    </div>
+
 
     <script src="script.js"></script>
 </body>
