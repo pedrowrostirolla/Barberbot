@@ -20,7 +20,10 @@ function renderLogin() {
     app.innerHTML = `
         <div class="view-centered">
             <div class="container">
-                <h2 style="text-align: center;">BARBERBOT PRO</h2>
+                <div class="logo-container">
+                    <i class="fas fa-scissors"></i>
+                    <span class="logo-text">BARBERBOT <b>PRO</b></span>
+                </div>
                 <div id="loginError" style="color:var(--danger); display:none; text-align:center; margin-bottom:10px; font-size:0.8rem;">Usuário e/ou senha incorreto(s)</div>
                 <div class="form-group"><label>Usuário</label><input type="text" id="l_user"></div>
                 <div class="form-group"><label>Senha</label><input type="password" id="l_pass"></div>
@@ -46,28 +49,18 @@ function executarLogin() {
     }
 }
 
-// --- TELA ADICIONA/EDITA USUARIO ---
+// --- TELA ADICIONA USUARIO ---
 function renderAdicionaUsuario(id = null) {
     const userEdit = id ? getUsuarios().find(u => u.id == id) : null;
-
     app.innerHTML = `
         <div class="view-centered">
             <div class="container">
-                <h2>${userEdit ? 'EDITAR USUÁRIO' : 'CADASTRO / RECUPERAÇÃO'}</h2>
+                <h2>${userEdit ? 'EDITAR USUÁRIO' : 'NOVO CADASTRO'}</h2>
                 <form onsubmit="salvarUser(event)">
                     <input type="hidden" id="userId" value="${userEdit ? userEdit.id : ''}">
-                    <div class="form-group">
-                        <label>Nome Completo</label>
-                        <input type="text" id="nome" value="${userEdit?.nomeCompleto || ''}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>E-mail *</label>
-                        <input type="email" id="email" value="${userEdit?.email || ''}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Usuário *</label>
-                        <input type="text" id="user" value="${userEdit?.usuario || ''}" required>
-                    </div>
+                    <div class="form-group"><label>Nome Completo</label><input type="text" id="nome" value="${userEdit?.nomeCompleto || ''}" required></div>
+                    <div class="form-group"><label>E-mail *</label><input type="email" id="email" value="${userEdit?.email || ''}" required></div>
+                    <div class="form-group"><label>Usuário *</label><input type="text" id="user" value="${userEdit?.usuario || ''}" required></div>
                     <div class="form-group"><label>Senha *</label><input type="password" id="pass" required></div>
                     <div class="form-group"><label>Confirme sua senha *</label><input type="password" id="passC" required></div>
                     <button type="submit" class="btn-primary">GRAVAR</button>
@@ -83,12 +76,9 @@ function salvarUser(e) {
     if(document.getElementById('pass').value !== document.getElementById('passC').value) {
         return alert("Os valores inseridos não coincidem. Verifique!");
     }
-    
     const id = document.getElementById('userId').value;
     const usuarios = getUsuarios();
     const inputUser = document.getElementById('user').value;
-
-    // Lógica para salvar: Se id existe, atualiza. Se não, verifica se é uma recuperação pelo username
     let userExistente = id ? usuarios.find(u => u.id == id) : usuarios.find(u => u.usuario === inputUser);
 
     const dados = {
@@ -100,15 +90,9 @@ function salvarUser(e) {
         ativo: userExistente ? userExistente.ativo : true
     };
 
-    let list;
-    if (userExistente) {
-        list = usuarios.map(u => u.id == userExistente.id ? dados : u);
-    } else {
-        list = [...usuarios, dados];
-    }
-    
+    const list = userExistente ? usuarios.map(u => u.id == userExistente.id ? dados : u) : [...usuarios, dados];
     saveUsuarios(list);
-    alert("Informações gravadas com sucesso!");
+    alert("Dados gravados!");
     navegar('Login');
 }
 
@@ -116,30 +100,34 @@ function salvarUser(e) {
 function renderBarberBotPro() {
     app.innerHTML = `
         <header class="main-header">
-            <div class="logo-area"><i class="fas fa-scissors"></i> <span>BARBERBOT PRO</span></div>
-            <div class="nav-menu">
+            <div class="logo-area">
+                <i class="fas fa-scissors"></i>
+                <span style="letter-spacing:1px">BARBERBOT <b>PRO</b></span>
+            </div>
+            <nav class="nav-menu">
                 <button class="btn-outline" style="border:none; width:auto">Produto</button>
                 <button class="btn-outline" style="border:none; width:auto">Vendas</button>
                 <button class="btn-outline" style="border:none; width:auto">Estoque</button>
                 <button class="btn-outline" style="border:none; width:auto" onclick="navegar('Configuracoes')">Configurações</button>
-            </div>
+            </nav>
             <div class="user-info">
                 <span>Olá, <strong>${usuarioLogado.nomeCompleto.split(' ')[0]}</strong></span>
                 <button onclick="navegar('Login')" style="background:none; color:var(--danger); cursor:pointer"><i class="fas fa-power-off"></i></button>
             </div>
         </header>
         <main style="padding: 4rem; text-align: center;">
-            <h1 style="color: var(--primary); font-size: 2.5rem;">Painel BarberBot</h1>
-            <p style="color: var(--text-dim)">Selecione uma opção no menu superior.</p>
+            <h1 style="color: var(--primary); font-size: 2.5rem;">Dashboard Administrativo</h1>
         </main>
     `;
 }
 
 // --- TELA CONFIGURAÇÕES ---
-function renderConfiguracoes(aba = 'gerais', sub = 'usuario') {
+function renderConfiguracoes(aba = 'gerais', sub = 'usuarios') {
     app.innerHTML = `
         <header class="main-header">
-            <div class="logo-area" onclick="navegar('BarberBotPro')" style="cursor:pointer"><i class="fas fa-scissors"></i> <span>BARBERBOT PRO</span></div>
+            <div class="logo-area" onclick="navegar('BarberBotPro')" style="cursor:pointer">
+                <i class="fas fa-scissors"></i> <span>BARBERBOT <b>PRO</b></span>
+            </div>
             <button class="btn-outline" style="width:auto" onclick="navegar('BarberBotPro')">Voltar</button>
         </header>
         <div class="container wide">
@@ -149,26 +137,31 @@ function renderConfiguracoes(aba = 'gerais', sub = 'usuario') {
                 <button class="tab-btn ${aba === 'backup' ? 'active' : ''}" onclick="renderConfiguracoes('backup')">Backup</button>
             </div>
             ${aba === 'gerais' ? `
-                <div class="sub-tabs" style="display:flex; gap:15px; margin-bottom:20px; background:#222; padding:10px; border-radius:8px;">
-                    <button class="tab-btn active" style="font-size:0.8rem">Usuário</button>
+                <div class="sub-tabs">
+                    <button class="sub-tab-btn" onclick="alert('Configurações Gerais em breve')">Geral</button>
+                    <button class="sub-tab-btn ${sub === 'usuarios' ? 'active' : ''}" onclick="renderConfiguracoes('gerais', 'usuarios')">Usuários</button>
                 </div>
-                <div id="gestao">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px">
-                         <div style="display:flex; gap:10px">
-                            <button id="btnEdit" class="btn-outline" disabled onclick="navegar('AdicionaUsuario', usuarioSelecionado.id)" style="width:auto">Editar</button>
-                            <button id="btnDelete" class="btn-outline" style="color:var(--danger); width:auto" disabled onclick="excluirUser()">Excluir</button>
-                         </div>
-                         <button class="btn-primary" style="width:auto" onclick="navegar('AdicionaUsuario')">+ Adicionar Novo</button>
-                    </div>
-                    <table>
-                        <thead><tr><th>NOME</th><th>E-MAIL</th><th>USUÁRIO</th><th>STATUS</th></tr></thead>
-                        <tbody id="listaCorpo"></tbody>
-                    </table>
-                </div>
-            ` : `<p>Backup em breve...</p>`}
+                ${sub === 'usuarios' ? renderTabelaUsuarios() : ''}
+            ` : `<p>Modulo Backup...</p>`}
         </div>
     `;
-    if(aba === 'gerais' && sub === 'usuario') atualizarTabela(getUsuarios());
+    if(sub === 'usuarios') atualizarTabela(getUsuarios());
+}
+
+function renderTabelaUsuarios() {
+    return `
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px">
+            <div style="display:flex; gap:10px">
+                <button id="btnEdit" class="btn-outline" disabled style="width:auto" onclick="navegar('AdicionaUsuario', usuarioSelecionado.id)">Editar</button>
+                <button id="btnDelete" class="btn-outline" style="color:var(--danger); width:auto" disabled onclick="excluirUser()">Excluir</button>
+            </div>
+            <button class="btn-primary" style="width:auto" onclick="navegar('AdicionaUsuario')">+ Novo Usuário</button>
+        </div>
+        <table>
+            <thead><tr><th>NOME</th><th>E-MAIL</th><th>USUÁRIO</th><th>STATUS</th></tr></thead>
+            <tbody id="listaCorpo"></tbody>
+        </table>
+    `;
 }
 
 function atualizarTabela(lista) {
@@ -177,7 +170,7 @@ function atualizarTabela(lista) {
     corpo.innerHTML = lista.map(u => `
         <tr onclick="selecionarUser(${u.id}, this)" style="cursor:pointer">
             <td>${u.nomeCompleto}</td><td>${u.email}</td><td>@${u.usuario}</td>
-            <td style="color:${u.ativo ? 'var(--success)' : 'var(--danger)'}">${u.ativo ? '● Ativo' : '○ Inativo'}</td>
+            <td style="color:${u.ativo ? 'var(--success)' : 'var(--danger)'}">${u.ativo ? 'Ativo' : 'Inativo'}</td>
         </tr>
     `).join('');
 }
@@ -191,9 +184,9 @@ function selecionarUser(id, el) {
 }
 
 function excluirUser() {
-    if(confirm('Excluir permanentemente?')) {
+    if(confirm('Excluir?')) {
         saveUsuarios(getUsuarios().filter(u => u.id != usuarioSelecionado.id));
-        renderConfiguracoes('gerais', 'usuario');
+        renderConfiguracoes('gerais', 'usuarios');
     }
 }
 
