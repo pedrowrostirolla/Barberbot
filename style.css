@@ -18,15 +18,15 @@ body { background-color: var(--bg); color: var(--text); margin: 0; min-height: 1
 .container { width: 95%; max-width: 450px; background: var(--surface); padding: 2.5rem; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 .container.wide { max-width: 1000px; margin: 20px auto; padding: 2rem; }
 
-/* Logo Styles */
+/* Logo */
 .logo-container { text-align: center; margin-bottom: 1.5rem; color: var(--primary); }
 .logo-container i { font-size: 2.5rem; margin-bottom: 0.5rem; }
 .logo-text { font-weight: 300; letter-spacing: 2px; font-size: 1.2rem; display: block; }
 .logo-text b { font-weight: 800; }
 
-.dev-footer { margin-top: 20px; font-size: 0.75rem; color: var(--text-dim); letter-spacing: 1px; opacity: 0.6; }
+.dev-footer { margin-top: 20px; font-size: 0.75rem; color: var(--text-dim); opacity: 0.6; }
 
-/* Header Principal */
+/* Header */
 .main-header {
     background: var(--surface); border-bottom: 1px solid var(--border);
     padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center;
@@ -34,7 +34,12 @@ body { background-color: var(--bg); color: var(--text); margin: 0; min-height: 1
 }
 .logo-area { display: flex; align-items: center; gap: 10px; color: var(--primary); }
 
-/* Tabs e Navegação */
+/* Navigation */
+.nav-menu { display: flex; gap: 5px; }
+.nav-btn { background: transparent; border: none; color: var(--text); padding: 8px 15px; cursor: pointer; font-weight: 500; border-radius: 6px; }
+.nav-btn:hover { background: var(--border); }
+
+/* Tabs */
 .tabs-container { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
 .tab-btn { background: none; border: none; color: var(--text-dim); padding: 10px 0; cursor: pointer; font-weight: 600; position: relative; }
 .tab-btn.active { color: var(--primary); }
@@ -44,19 +49,18 @@ body { background-color: var(--bg); color: var(--text); margin: 0; min-height: 1
 .sub-tab-btn { background: none; border: none; color: var(--text-dim); padding: 6px 12px; cursor: pointer; font-size: 0.8rem; border-radius: 4px; }
 .sub-tab-btn.active { background: var(--border); color: white; font-weight: 600; }
 
-/* Checkbox Estilizado */
-.checkbox-group { display: flex; align-items: center; gap: 10px; cursor: help; padding: 10px 0; }
-.checkbox-group input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+/* Info Icon */
+.info-icon { color: var(--primary); cursor: help; font-size: 0.9rem; margin-left: 8px; }
 
-/* Formulários */
+/* Forms & Tables */
 .form-group { margin-bottom: 1rem; }
 label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; display: block; }
 input { width: 100%; padding: 10px; background: #252525; border: 1px solid var(--border); border-radius: 6px; color: white; }
-button { cursor: pointer; border-radius: 6px; font-weight: 600; border: none; padding: 12px; }
-.btn-primary { background: var(--primary); color: #000; width: 100%; }
-.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); width: 100%; }
+button { cursor: pointer; border-radius: 6px; font-weight: 600; border: none; padding: 10px; }
+.btn-primary { background: var(--primary); color: #000; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:disabled { opacity: 0.2; cursor: not-allowed; }
 
-/* Tabela */
 table { width: 100%; border-collapse: separate; border-spacing: 0 5px; }
-td { padding: 12px; background: #222; font-size: 0.9rem; }
+td { padding: 12px; background: #222; font-size: 0.85rem; }
 tr.selected td { background: #2d2a1e; border-top: 1px solid var(--primary); border-bottom: 1px solid var(--primary); }
