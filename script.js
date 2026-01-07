@@ -1,11 +1,15 @@
 const DB_KEY = 'barberbot_usuarios';
+const CFG_KEY = 'barberbot_config';
 const app = document.getElementById('app');
 
 let usuarioLogado = null;
 let usuarioSelecionado = null;
 
+// Persistência
 const getUsuarios = () => JSON.parse(localStorage.getItem(DB_KEY)) || [];
 const saveUsuarios = (usuarios) => localStorage.setItem(DB_KEY, JSON.stringify(usuarios));
+const getConfig = () => JSON.parse(localStorage.getItem(CFG_KEY)) || { controlaOrdem: false };
+const saveConfig = (cfg) => localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
 
 function navegar(tela, params = null) {
     usuarioSelecionado = null;
@@ -49,55 +53,9 @@ function executarLogin() {
     }
 }
 
-// --- TELA ADICIONA USUARIO ---
-function renderAdicionaUsuario(id = null) {
-    const userEdit = id ? getUsuarios().find(u => u.id == id) : null;
-    app.innerHTML = `
-        <div class="view-centered">
-            <div class="container">
-                <h2>${userEdit ? 'EDITAR USUÁRIO' : 'NOVO CADASTRO'}</h2>
-                <form onsubmit="salvarUser(event)">
-                    <input type="hidden" id="userId" value="${userEdit ? userEdit.id : ''}">
-                    <div class="form-group"><label>Nome Completo</label><input type="text" id="nome" value="${userEdit?.nomeCompleto || ''}" required></div>
-                    <div class="form-group"><label>E-mail *</label><input type="email" id="email" value="${userEdit?.email || ''}" required></div>
-                    <div class="form-group"><label>Usuário *</label><input type="text" id="user" value="${userEdit?.usuario || ''}" required></div>
-                    <div class="form-group"><label>Senha *</label><input type="password" id="pass" required></div>
-                    <div class="form-group"><label>Confirme sua senha *</label><input type="password" id="passC" required></div>
-                    <button type="submit" class="btn-primary">GRAVAR</button>
-                    <button type="button" class="btn-outline" style="margin-top:10px;" onclick="navegar('Login')">CANCELAR</button>
-                </form>
-            </div>
-        </div>
-    `;
-}
-
-function salvarUser(e) {
-    e.preventDefault();
-    if(document.getElementById('pass').value !== document.getElementById('passC').value) {
-        return alert("Os valores inseridos não coincidem. Verifique!");
-    }
-    const id = document.getElementById('userId').value;
-    const usuarios = getUsuarios();
-    const inputUser = document.getElementById('user').value;
-    let userExistente = id ? usuarios.find(u => u.id == id) : usuarios.find(u => u.usuario === inputUser);
-
-    const dados = {
-        id: userExistente ? userExistente.id : Date.now(),
-        nomeCompleto: document.getElementById('nome').value,
-        email: document.getElementById('email').value,
-        usuario: inputUser,
-        senha: document.getElementById('pass').value,
-        ativo: userExistente ? userExistente.ativo : true
-    };
-
-    const list = userExistente ? usuarios.map(u => u.id == userExistente.id ? dados : u) : [...usuarios, dados];
-    saveUsuarios(list);
-    alert("Dados gravados!");
-    navegar('Login');
-}
-
 // --- TELA PRINCIPAL ---
 function renderBarberBotPro() {
+    const cfg = getConfig();
     app.innerHTML = `
         <header class="main-header">
             <div class="logo-area">
@@ -108,21 +66,23 @@ function renderBarberBotPro() {
                 <button class="btn-outline" style="border:none; width:auto">Produto</button>
                 <button class="btn-outline" style="border:none; width:auto">Vendas</button>
                 <button class="btn-outline" style="border:none; width:auto">Estoque</button>
+                ${cfg.controlaOrdem ? `<button class="btn-outline" style="border:none; width:auto; color:var(--primary)"><i class="fas fa-list-ol"></i> Ordem de Chegada</button>` : ''}
                 <button class="btn-outline" style="border:none; width:auto" onclick="navegar('Configuracoes')">Configurações</button>
             </nav>
             <div class="user-info">
                 <span>Olá, <strong>${usuarioLogado.nomeCompleto.split(' ')[0]}</strong></span>
-                <button onclick="navegar('Login')" style="background:none; color:var(--danger); cursor:pointer"><i class="fas fa-power-off"></i></button>
+                <button onclick="navegar('Login')" style="background:none; color:var(--danger); cursor:pointer; border:none"><i class="fas fa-power-off"></i></button>
             </div>
         </header>
         <main style="padding: 4rem; text-align: center;">
             <h1 style="color: var(--primary); font-size: 2.5rem;">Dashboard Administrativo</h1>
+            <p style="color:var(--text-dim)">Gerencie sua barbearia com inteligência.</p>
         </main>
     `;
 }
 
 // --- TELA CONFIGURAÇÕES ---
-function renderConfiguracoes(aba = 'gerais', sub = 'usuarios') {
+function renderConfiguracoes(aba = 'gerais', sub = 'geral') {
     app.innerHTML = `
         <header class="main-header">
             <div class="logo-area" onclick="navegar('BarberBotPro')" style="cursor:pointer">
@@ -138,16 +98,38 @@ function renderConfiguracoes(aba = 'gerais', sub = 'usuarios') {
             </div>
             ${aba === 'gerais' ? `
                 <div class="sub-tabs">
-                    <button class="sub-tab-btn" onclick="alert('Configurações Gerais em breve')">Geral</button>
+                    <button class="sub-tab-btn ${sub === 'geral' ? 'active' : ''}" onclick="renderConfiguracoes('gerais', 'geral')">Geral</button>
                     <button class="sub-tab-btn ${sub === 'usuarios' ? 'active' : ''}" onclick="renderConfiguracoes('gerais', 'usuarios')">Usuários</button>
                 </div>
-                ${sub === 'usuarios' ? renderTabelaUsuarios() : ''}
-            ` : `<p>Modulo Backup...</p>`}
+                <div id="subTabContent">
+                    ${sub === 'geral' ? renderConfigGeralUI() : renderTabelaUsuarios()}
+                </div>
+            ` : `<p style="padding:20px; color:var(--text-dim)">Módulo de Backup em breve...</p>`}
         </div>
     `;
     if(sub === 'usuarios') atualizarTabela(getUsuarios());
 }
 
+function renderConfigGeralUI() {
+    const cfg = getConfig();
+    return `
+        <div style="background:#222; padding:20px; border-radius:8px; border:1px solid var(--border)">
+            <h3 style="margin-top:0; font-size:1rem; color:var(--primary)">Preferências do Sistema</h3>
+            <div class="checkbox-group" title="Quando marcada, habilitará o controle por ordem de chegada.">
+                <input type="checkbox" id="checkOrdem" ${cfg.controlaOrdem ? 'checked' : ''} onchange="atualizarCfgOrdem(this.checked)">
+                <label style="display:inline; text-transform:none; cursor:pointer" for="checkOrdem">Controla ordem de chegada</label>
+            </div>
+        </div>
+    `;
+}
+
+function atualizarCfgOrdem(valor) {
+    const cfg = getConfig();
+    cfg.controlaOrdem = valor;
+    saveConfig(cfg);
+}
+
+// --- GESTÃO DE USUÁRIOS ---
 function renderTabelaUsuarios() {
     return `
         <div style="display:flex; justify-content:space-between; margin-bottom:15px">
@@ -184,10 +166,58 @@ function selecionarUser(id, el) {
 }
 
 function excluirUser() {
-    if(confirm('Excluir?')) {
+    if(confirm('Excluir permanentemente?')) {
         saveUsuarios(getUsuarios().filter(u => u.id != usuarioSelecionado.id));
         renderConfiguracoes('gerais', 'usuarios');
     }
 }
 
+// --- TELA ADICIONA USUARIO ---
+function renderAdicionaUsuario(id = null) {
+    const userEdit = id ? getUsuarios().find(u => u.id == id) : null;
+    app.innerHTML = `
+        <div class="view-centered">
+            <div class="container">
+                <h2>${userEdit ? 'EDITAR' : 'NOVO CADASTRO'}</h2>
+                <form onsubmit="salvarUser(event)">
+                    <input type="hidden" id="userId" value="${userEdit ? userEdit.id : ''}">
+                    <div class="form-group"><label>Nome Completo</label><input type="text" id="nome" value="${userEdit?.nomeCompleto || ''}" required></div>
+                    <div class="form-group"><label>E-mail *</label><input type="email" id="email" value="${userEdit?.email || ''}" required></div>
+                    <div class="form-group"><label>Usuário *</label><input type="text" id="user" value="${userEdit?.usuario || ''}" required></div>
+                    <div class="form-group"><label>Senha *</label><input type="password" id="pass" required></div>
+                    <div class="form-group"><label>Confirme sua senha *</label><input type="password" id="passC" required></div>
+                    <button type="submit" class="btn-primary">GRAVAR</button>
+                    <button type="button" class="btn-outline" style="margin-top:10px;" onclick="navegar('Login')">CANCELAR</button>
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+function salvarUser(e) {
+    e.preventDefault();
+    if(document.getElementById('pass').value !== document.getElementById('passC').value) {
+        return alert("Os valores inseridos não coincidem. Verifique!");
+    }
+    const id = document.getElementById('userId').value;
+    const usuarios = getUsuarios();
+    const inputUser = document.getElementById('user').value;
+    let userExistente = id ? usuarios.find(u => u.id == id) : usuarios.find(u => u.usuario === inputUser);
+
+    const dados = {
+        id: userExistente ? userExistente.id : Date.now(),
+        nomeCompleto: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        usuario: inputUser,
+        senha: document.getElementById('pass').value,
+        ativo: userExistente ? userExistente.ativo : true
+    };
+
+    const list = userExistente ? usuarios.map(u => u.id == userExistente.id ? dados : u) : [...usuarios, dados];
+    saveUsuarios(list);
+    alert("Dados gravados com sucesso!");
+    navegar('Login');
+}
+
+// Inicializar
 navegar('Login');
