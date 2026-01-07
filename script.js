@@ -96,7 +96,7 @@ function renderBarberBotPro() {
     `;
 }
 
-// --- TELA CONFIGURAÇÕES ---
+// --- CONFIGURAÇÕES ---
 function renderConfiguracoes(aba = 'gerais', sub = 'gerais') {
     const isAdmin = usuarioLogado.tipo === 'Administrador';
 
@@ -143,19 +143,17 @@ function renderConfigGeralUI() {
                 <input type="checkbox" id="checkOrdem" style="width:18px; height:18px; accent-color:var(--primary)" 
                     ${cfg.controlaOrdem ? 'checked' : ''} onchange="saveConfig({controlaOrdem: this.checked})">
                 <label for="checkOrdem" style="display:inline; text-transform:none; margin:0 0 0 10px; cursor:pointer">Controla ordem de chegada</label>
-                <i class="fas fa-info-circle info-icon" title="Habilita o controle por ordem de chegada."></i>
             </div>
         </div>
     `;
 }
 
-// --- GESTÃO DE USUÁRIOS ---
 function renderTabelaUsuarios() {
     const isAdmin = usuarioLogado.tipo === 'Administrador';
     return `
         <div style="display:flex; justify-content:space-between; margin-bottom:15px">
             <div style="display:flex; gap:10px">
-                <button id="btnEdit" class="btn-outline" disabled onclick="navegar('AdicionaUsuario', usuarioSelecionado.id)">Editar</button>
+                <button id="btnEdit" class="btn-outline" disabled onclick="tentarEditar()">Editar</button>
                 <button id="btnStatus" class="btn-outline" disabled onclick="isAdmin ? toggleStatusUser() : null" ${!isAdmin ? 'style="display:none"' : ''}>Ativar/Desativar</button>
                 <button id="btnDelete" class="btn-outline" style="color:var(--danger)" disabled onclick="isAdmin ? excluirUser() : null" ${!isAdmin ? 'style="display:none"' : ''}>Excluir</button>
             </div>
@@ -167,6 +165,15 @@ function renderTabelaUsuarios() {
             <tbody id="listaCorpo"></tbody>
         </table>
     `;
+}
+
+function tentarEditar() {
+    // Bloqueia Normal de editar Administrador
+    if(usuarioLogado.tipo === 'Normal' && usuarioSelecionado.tipo === 'Administrador') {
+        alert("Erro hierárquico: Um usuário Normal não pode alterar dados de um Administrador.");
+        return;
+    }
+    navegar('AdicionaUsuario', usuarioSelecionado.id);
 }
 
 function atualizarTabela(lista) {
@@ -185,7 +192,6 @@ function selecionarUser(id, el) {
     document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
     el.classList.add('selected');
     usuarioSelecionado = getUsuarios().find(u => u.id == id);
-    
     document.getElementById('btnEdit').disabled = false;
     if(isAdmin) {
         document.getElementById('btnStatus').disabled = false;
@@ -193,7 +199,7 @@ function selecionarUser(id, el) {
     }
 }
 
-// --- MÓDULO PERFIS ALINHADO ---
+// --- GESTÃO DE PERFIS (ADMIN ONLY) ---
 function renderModuloPerfis() {
     const usuarios = getUsuarios();
     return `
@@ -208,9 +214,7 @@ function renderModuloPerfis() {
                     `).join('')}
                 </div>
             </div>
-            <div id="permEditor">
-                <p style="color:var(--text-dim); text-align:center; padding-top:50px">Escolha um usuário à esquerda para gerenciar acessos.</p>
-            </div>
+            <div id="permEditor"><p style="color:var(--text-dim); text-align:center; padding-top:50px">Escolha um usuário para gerenciar acessos.</p></div>
         </div>
     `;
 }
@@ -220,15 +224,10 @@ function carregarPerfilUser(id) {
     usuarioSelecionado = user;
     const perms = user.permissoes || [];
     
-    // Re-renderiza a lista da esquerda para mostrar o selecionado
-    const btns = document.querySelectorAll('.perfis-grid .btn-outline');
-    btns.forEach(b => b.style.borderColor = 'var(--border)');
-
     document.getElementById('permEditor').innerHTML = `
         <div class="permissions-card">
             <h3 style="margin-top:0; color:var(--primary); font-size:1.1rem">Acessos: ${user.nomeCompleto}</h3>
             <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:20px">Os botões marcados abaixo ficarão visíveis para este usuário.</p>
-            
             <form id="formPerms" onsubmit="salvarPerfil(event, ${user.id})">
                 <div class="perm-list">
                     ${BOTOES_MENU.map(btn => `
@@ -246,15 +245,23 @@ function carregarPerfilUser(id) {
 
 function salvarPerfil(e, userId) {
     e.preventDefault();
+    const userTarget = getUsuarios().find(u => u.id === userId);
+    
+    // Trava de segurança extra
+    if(usuarioLogado.tipo === 'Normal' && userTarget.tipo === 'Administrador') {
+        alert("Ação negada: Usuários normais não podem alterar perfis de administradores.");
+        return;
+    }
+
     const selecionados = Array.from(document.querySelectorAll('#formPerms input:checked')).map(i => i.value);
     const list = getUsuarios().map(u => u.id === userId ? {...u, permissoes: selecionados} : u);
     saveUsuarios(list);
     if(usuarioLogado.id === userId) usuarioLogado.permissoes = selecionados;
-    alert("Permissões de acesso atualizadas!");
+    alert("Permissões atualizadas!");
     renderConfiguracoes('usuarios', 'perfis');
 }
 
-// --- TELA ADICIONA/EDITA USUÁRIO ---
+// --- TELA ADICIONA/EDITA ---
 function renderAdicionaUsuario(id = null) {
     const userEdit = id ? getUsuarios().find(u => u.id == id) : null;
     const isEditing = !!userEdit;
@@ -271,7 +278,7 @@ function renderAdicionaUsuario(id = null) {
                         <div class="form-group"><label>Usuário</label><input type="text" id="user" value="${userEdit?.usuario || ''}" required></div>
                         <div class="form-group">
                             <label>Tipo</label>
-                            <select id="tipo">
+                            <select id="tipo" ${isEditing && usuarioLogado.tipo === 'Normal' ? 'disabled' : ''}>
                                 <option value="Normal" ${userEdit?.tipo === 'Normal' ? 'selected' : ''}>Normal</option>
                                 <option value="Administrador" ${userEdit?.tipo === 'Administrador' ? 'selected' : ''}>Administrador</option>
                             </select>
@@ -293,24 +300,30 @@ function renderAdicionaUsuario(id = null) {
 function salvarUser(e) {
     e.preventDefault();
     if(document.getElementById('pass').value !== document.getElementById('passC').value) return alert("Senhas não conferem!");
+    
     const id = document.getElementById('userId').value;
     const list = getUsuarios();
-    const inputU = document.getElementById('user').value;
-    let exist = id ? list.find(u => u.id == id) : list.find(u => u.usuario === inputU);
+    const userTarget = id ? list.find(u => u.id == id) : null;
+
+    // Trava de senha/segurança: Normal não edita Admin
+    if(usuarioLogado && usuarioLogado.tipo === 'Normal' && userTarget?.tipo === 'Administrador') {
+        alert("Erro de permissão: Você não pode alterar dados de um administrador.");
+        return;
+    }
 
     const dados = {
-        id: exist ? exist.id : Date.now(),
+        id: userTarget ? userTarget.id : Date.now(),
         nomeCompleto: document.getElementById('nome').value,
         email: document.getElementById('email').value,
-        usuario: inputU,
+        usuario: document.getElementById('user').value,
         tipo: document.getElementById('tipo').value,
         senha: document.getElementById('pass').value,
-        permissoes: exist ? exist.permissoes : (document.getElementById('tipo').value === 'Administrador' ? BOTOES_MENU.map(b => b.id) : []),
-        ativo: exist ? exist.ativo : true
+        permissoes: userTarget ? userTarget.permissoes : (document.getElementById('tipo').value === 'Administrador' ? BOTOES_MENU.map(b => b.id) : []),
+        ativo: userTarget ? userTarget.ativo : true
     };
     
-    saveUsuarios(exist ? list.map(u => u.id == exist.id ? dados : u) : [...list, dados]);
-    alert("Usuário salvo!");
+    saveUsuarios(userTarget ? list.map(u => u.id == userTarget.id ? dados : u) : [...list, dados]);
+    alert("Dados salvos!");
     usuarioLogado ? navegar('Configuracoes', 'usuarios', 'cadastros') : navegar('Login');
 }
 
