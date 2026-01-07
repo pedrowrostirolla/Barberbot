@@ -28,7 +28,7 @@ function navegar(tela, params = null) {
 
 // --- TELA LOGIN ---
 function renderLogin() {
-    usuarioLogado = null; // Limpa sessão ao ir para login
+    usuarioLogado = null;
     app.innerHTML = `
         <div class="view-centered">
             <div class="container">
@@ -48,11 +48,8 @@ function renderLogin() {
         </div>
     `;
 
-    // Listener para Enter nos inputs
     [document.getElementById('l_user'), document.getElementById('l_pass')].forEach(input => {
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') executarLogin();
-        });
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') executarLogin(); });
     });
 }
 
@@ -196,40 +193,52 @@ function selecionarUser(id, el) {
     }
 }
 
-// --- MÓDULO PERFIS ---
+// --- MÓDULO PERFIS ALINHADO ---
 function renderModuloPerfis() {
     const usuarios = getUsuarios();
     return `
         <div class="perfis-grid">
             <div style="border-right:1px solid var(--border); padding-right:20px">
                 <h4 style="margin-top:0">Selecione o Usuário</h4>
-                <div style="display:flex; flex-direction:column; gap:5px">
+                <div style="display:flex; flex-direction:column; gap:8px">
                     ${usuarios.map(u => `
-                        <button class="btn-outline" style="text-align:left; padding:12px; font-size:0.8rem" onclick="carregarPerfilUser(${u.id})">
+                        <button class="btn-outline" style="text-align:left; padding:12px; font-size:0.8rem; border-color:${usuarioSelecionado?.id === u.id ? 'var(--primary)' : 'var(--border)'}" onclick="carregarPerfilUser(${u.id})">
                             ${u.nomeCompleto} <br><small style="color:var(--text-dim)">@${u.usuario}</small>
                         </button>
                     `).join('')}
                 </div>
             </div>
-            <div id="permEditor"><p style="color:var(--text-dim); text-align:center; padding-top:50px">Selecione um usuário à esquerda.</p></div>
+            <div id="permEditor">
+                <p style="color:var(--text-dim); text-align:center; padding-top:50px">Escolha um usuário à esquerda para gerenciar acessos.</p>
+            </div>
         </div>
     `;
 }
 
 function carregarPerfilUser(id) {
     const user = getUsuarios().find(u => u.id == id);
+    usuarioSelecionado = user;
     const perms = user.permissoes || [];
+    
+    // Re-renderiza a lista da esquerda para mostrar o selecionado
+    const btns = document.querySelectorAll('.perfis-grid .btn-outline');
+    btns.forEach(b => b.style.borderColor = 'var(--border)');
+
     document.getElementById('permEditor').innerHTML = `
         <div class="permissions-card">
-            <h3>Acessos: ${user.nomeCompleto}</h3>
+            <h3 style="margin-top:0; color:var(--primary); font-size:1.1rem">Acessos: ${user.nomeCompleto}</h3>
+            <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:20px">Os botões marcados abaixo ficarão visíveis para este usuário.</p>
+            
             <form id="formPerms" onsubmit="salvarPerfil(event, ${user.id})">
-                ${BOTOES_MENU.map(btn => `
-                    <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px">
-                        <input type="checkbox" id="p_${btn.id}" value="${btn.id}" ${perms.includes(btn.id) ? 'checked' : ''}>
-                        <label for="p_${btn.id}" style="text-transform:none; cursor:pointer">${btn.label}</label>
-                    </div>
-                `).join('')}
-                <button type="submit" class="btn-primary" style="margin-top:20px">SALVAR ACESSOS</button>
+                <div class="perm-list">
+                    ${BOTOES_MENU.map(btn => `
+                        <div class="perm-item">
+                            <input type="checkbox" id="p_${btn.id}" value="${btn.id}" ${perms.includes(btn.id) ? 'checked' : ''}>
+                            <label for="p_${btn.id}">${btn.label}</label>
+                        </div>
+                    `).join('')}
+                </div>
+                <button type="submit" class="btn-primary" style="padding:12px 30px; font-size:0.85rem">GRAVAR ACESSOS</button>
             </form>
         </div>
     `;
@@ -241,7 +250,7 @@ function salvarPerfil(e, userId) {
     const list = getUsuarios().map(u => u.id === userId ? {...u, permissoes: selecionados} : u);
     saveUsuarios(list);
     if(usuarioLogado.id === userId) usuarioLogado.permissoes = selecionados;
-    alert("Permissões atualizadas!");
+    alert("Permissões de acesso atualizadas!");
     renderConfiguracoes('usuarios', 'perfis');
 }
 
