@@ -49,9 +49,6 @@ body { background-color: var(--bg); color: var(--text); margin: 0; min-height: 1
 .sub-tab-btn { background: none; border: none; color: var(--text-dim); padding: 6px 12px; cursor: pointer; font-size: 0.8rem; border-radius: 4px; }
 .sub-tab-btn.active { background: var(--border); color: white; font-weight: 600; }
 
-/* Info Icon */
-.info-icon { color: var(--primary); cursor: help; font-size: 0.9rem; margin-left: 8px; }
-
 /* Forms & Tables */
 .form-group { margin-bottom: 1rem; }
 label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; display: block; }
@@ -59,16 +56,12 @@ input, select { width: 100%; padding: 10px; background: #252525; border: 1px sol
 button { cursor: pointer; border-radius: 6px; font-weight: 600; border: none; padding: 10px; }
 .btn-primary { background: var(--primary); color: #000; }
 .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-.btn-outline:disabled { opacity: 0.2; cursor: not-allowed; }
+.btn-outline:disabled { opacity: 0.15; cursor: not-allowed; filter: grayscale(1); }
 
 table { width: 100%; border-collapse: separate; border-spacing: 0 5px; table-layout: fixed; }
 th { text-align: left; padding: 10px; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; }
 td { padding: 12px; background: #222; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 tr.selected td { background: #2d2a1e; border-top: 1px solid var(--primary); border-bottom: 1px solid var(--primary); }
 
-/* Layout Perfis */
 .perfis-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
 .permissions-card { background: #252525; padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
-.perm-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 8px; border-radius: 4px; }
-.perm-item:hover { background: #333; }
-.perm-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }

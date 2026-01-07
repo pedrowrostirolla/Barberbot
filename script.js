@@ -28,6 +28,7 @@ function navegar(tela, params = null) {
 
 // --- TELA LOGIN ---
 function renderLogin() {
+    usuarioLogado = null; // Limpa sessão ao ir para login
     app.innerHTML = `
         <div class="view-centered">
             <div class="container">
@@ -46,6 +47,13 @@ function renderLogin() {
             <div class="dev-footer">Desenvolvido por 9DEV</div>
         </div>
     `;
+
+    // Listener para Enter nos inputs
+    [document.getElementById('l_user'), document.getElementById('l_pass')].forEach(input => {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') executarLogin();
+        });
+    });
 }
 
 function executarLogin() {
@@ -64,10 +72,7 @@ function executarLogin() {
 function renderBarberBotPro() {
     const cfg = getConfig();
     const perms = usuarioLogado.permissoes || [];
-    const deveMostrar = (id) => {
-        if (id === 'ordem' && !cfg.controlaOrdem) return false;
-        return perms.includes(id);
-    };
+    const deveMostrar = (id) => (id === 'ordem' && !cfg.controlaOrdem) ? false : perms.includes(id);
 
     app.innerHTML = `
         <header class="main-header">
@@ -83,13 +88,13 @@ function renderBarberBotPro() {
                 ${deveMostrar('config') ? `<button class="nav-btn" onclick="navegar('Configuracoes')">Configurações</button>` : ''}
             </nav>
             <div class="user-info">
-                <span style="font-size:0.8rem; color:var(--text-dim); margin-right:5px;">[${usuarioLogado.tipo}]</span>
+                <span style="font-size:0.7rem; color:var(--primary); margin-right:8px; border:1px solid; padding:2px 5px; border-radius:4px">${usuarioLogado.tipo.toUpperCase()}</span>
                 <span>Olá, <strong>${usuarioLogado.nomeCompleto.split(' ')[0]}</strong></span>
                 <button onclick="navegar('Login')" style="background:none; color:var(--danger); border:none; cursor:pointer"><i class="fas fa-power-off"></i></button>
             </div>
         </header>
         <main style="padding: 4rem; text-align: center;">
-            <h1 style="color: var(--primary); font-size: 2.5rem;">Dashboard Administrativo</h1>
+            <h1 style="color: var(--primary); font-size: 2.5rem;">Dashboard</h1>
         </main>
     `;
 }
@@ -126,8 +131,6 @@ function renderConfiguracoes(aba = 'gerais', sub = 'gerais') {
                     </div>
                     ${sub === 'cadastros' ? renderTabelaUsuarios() : renderModuloPerfis()}
                 ` : ''}
-
-                ${aba === 'backup' ? `<p style="color:var(--text-dim)">Backup em desenvolvimento...</p>` : ''}
             </div>
         </div>
     `;
@@ -138,27 +141,28 @@ function renderConfigGeralUI() {
     const cfg = getConfig();
     return `
         <div style="background:#222; padding:20px; border-radius:8px; border:1px solid var(--border)">
-            <h3 style="margin-top:0; font-size:1rem; color:var(--primary)">Preferências</h3>
+            <h3 style="margin-top:0; font-size:1rem; color:var(--primary)">Sistema</h3>
             <div style="display:flex; align-items:center;">
                 <input type="checkbox" id="checkOrdem" style="width:18px; height:18px; accent-color:var(--primary)" 
                     ${cfg.controlaOrdem ? 'checked' : ''} onchange="saveConfig({controlaOrdem: this.checked})">
                 <label for="checkOrdem" style="display:inline; text-transform:none; margin:0 0 0 10px; cursor:pointer">Controla ordem de chegada</label>
-                <i class="fas fa-info-circle info-icon" title="Quando marcada, habilitará o controle por ordem de chegada."></i>
+                <i class="fas fa-info-circle info-icon" title="Habilita o controle por ordem de chegada."></i>
             </div>
         </div>
     `;
 }
 
-// --- CADASTRO DE USUÁRIOS (SEM PERMISSÕES) ---
+// --- GESTÃO DE USUÁRIOS ---
 function renderTabelaUsuarios() {
+    const isAdmin = usuarioLogado.tipo === 'Administrador';
     return `
         <div style="display:flex; justify-content:space-between; margin-bottom:15px">
             <div style="display:flex; gap:10px">
                 <button id="btnEdit" class="btn-outline" disabled onclick="navegar('AdicionaUsuario', usuarioSelecionado.id)">Editar</button>
-                <button id="btnStatus" class="btn-outline" disabled onclick="toggleStatusUser()">Ativar/Desativar</button>
-                <button id="btnDelete" class="btn-outline" style="color:var(--danger)" disabled onclick="excluirUser()">Excluir</button>
+                <button id="btnStatus" class="btn-outline" disabled onclick="isAdmin ? toggleStatusUser() : null" ${!isAdmin ? 'style="display:none"' : ''}>Ativar/Desativar</button>
+                <button id="btnDelete" class="btn-outline" style="color:var(--danger)" disabled onclick="isAdmin ? excluirUser() : null" ${!isAdmin ? 'style="display:none"' : ''}>Excluir</button>
             </div>
-            <button class="btn-primary" onclick="navegar('AdicionaUsuario')">+ Novo Usuário</button>
+            ${isAdmin ? `<button class="btn-primary" onclick="navegar('AdicionaUsuario')">+ Novo Usuário</button>` : ''}
         </div>
         <table>
             <colgroup><col style="width:30%"><col style="width:25%"><col style="width:20%"><col style="width:15%"><col style="width:10%"></colgroup>
@@ -173,25 +177,26 @@ function atualizarTabela(lista) {
     if(!corpo) return;
     corpo.innerHTML = lista.map(u => `
         <tr onclick="selecionarUser(${u.id}, this)" style="cursor:pointer">
-            <td>${u.nomeCompleto}</td>
-            <td>${u.email}</td>
-            <td>@${u.usuario}</td>
-            <td>${u.tipo || 'Normal'}</td>
+            <td>${u.nomeCompleto}</td><td>${u.email}</td><td>@${u.usuario}</td><td>${u.tipo}</td>
             <td style="color:${u.ativo ? 'var(--success)' : 'var(--danger)'}">${u.ativo ? 'Ativo' : 'Inativo'}</td>
         </tr>
     `).join('');
 }
 
 function selecionarUser(id, el) {
+    const isAdmin = usuarioLogado.tipo === 'Administrador';
     document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
     el.classList.add('selected');
     usuarioSelecionado = getUsuarios().find(u => u.id == id);
+    
     document.getElementById('btnEdit').disabled = false;
-    document.getElementById('btnStatus').disabled = false;
-    document.getElementById('btnDelete').disabled = usuarioSelecionado.ativo;
+    if(isAdmin) {
+        document.getElementById('btnStatus').disabled = false;
+        document.getElementById('btnDelete').disabled = usuarioSelecionado.ativo;
+    }
 }
 
-// --- MÓDULO DE PERFIS (EXCLUSIVO ADMIN) ---
+// --- MÓDULO PERFIS ---
 function renderModuloPerfis() {
     const usuarios = getUsuarios();
     return `
@@ -201,14 +206,12 @@ function renderModuloPerfis() {
                 <div style="display:flex; flex-direction:column; gap:5px">
                     ${usuarios.map(u => `
                         <button class="btn-outline" style="text-align:left; padding:12px; font-size:0.8rem" onclick="carregarPerfilUser(${u.id})">
-                            ${u.nomeCompleto} <br><small style="color:var(--text-dim)">@${u.usuario} (${u.tipo})</small>
+                            ${u.nomeCompleto} <br><small style="color:var(--text-dim)">@${u.usuario}</small>
                         </button>
                     `).join('')}
                 </div>
             </div>
-            <div id="permEditor" style="padding-left:10px">
-                <p style="color:var(--text-dim); text-align:center; padding-top:50px">Selecione um usuário para gerenciar permissões.</p>
-            </div>
+            <div id="permEditor"><p style="color:var(--text-dim); text-align:center; padding-top:50px">Selecione um usuário à esquerda.</p></div>
         </div>
     `;
 }
@@ -216,19 +219,17 @@ function renderModuloPerfis() {
 function carregarPerfilUser(id) {
     const user = getUsuarios().find(u => u.id == id);
     const perms = user.permissoes || [];
-    
     document.getElementById('permEditor').innerHTML = `
         <div class="permissions-card">
-            <h3 style="margin-top:0; color:var(--primary)">Acessos: ${user.nomeCompleto}</h3>
-            <p style="font-size:0.8rem; margin-bottom:20px">Marque os botões que estarão visíveis no menu deste usuário.</p>
+            <h3>Acessos: ${user.nomeCompleto}</h3>
             <form id="formPerms" onsubmit="salvarPerfil(event, ${user.id})">
                 ${BOTOES_MENU.map(btn => `
-                    <div class="perm-item">
+                    <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px">
                         <input type="checkbox" id="p_${btn.id}" value="${btn.id}" ${perms.includes(btn.id) ? 'checked' : ''}>
                         <label for="p_${btn.id}" style="text-transform:none; cursor:pointer">${btn.label}</label>
                     </div>
                 `).join('')}
-                <button type="submit" class="btn-primary" style="margin-top:20px; width:200px">SALVAR ACESSOS</button>
+                <button type="submit" class="btn-primary" style="margin-top:20px">SALVAR ACESSOS</button>
             </form>
         </div>
     `;
@@ -237,33 +238,30 @@ function carregarPerfilUser(id) {
 function salvarPerfil(e, userId) {
     e.preventDefault();
     const selecionados = Array.from(document.querySelectorAll('#formPerms input:checked')).map(i => i.value);
-    const usuarios = getUsuarios();
-    const atualizados = usuarios.map(u => u.id === userId ? {...u, permissoes: selecionados} : u);
-    saveUsuarios(atualizados);
-    
-    // Se for o próprio usuário logado, atualiza o objeto em memória para refletir no menu
+    const list = getUsuarios().map(u => u.id === userId ? {...u, permissoes: selecionados} : u);
+    saveUsuarios(list);
     if(usuarioLogado.id === userId) usuarioLogado.permissoes = selecionados;
-    
-    alert("Permissões atualizadas com sucesso!");
+    alert("Permissões atualizadas!");
     renderConfiguracoes('usuarios', 'perfis');
 }
 
-// --- TELA NOVO USUÁRIO ---
+// --- TELA ADICIONA/EDITA USUÁRIO ---
 function renderAdicionaUsuario(id = null) {
     const userEdit = id ? getUsuarios().find(u => u.id == id) : null;
+    const isEditing = !!userEdit;
 
     app.innerHTML = `
         <div class="view-centered">
             <div class="container" style="max-width:550px">
-                <h2>${userEdit ? 'EDITAR' : 'NOVO'} USUÁRIO</h2>
+                <h2>${isEditing ? 'EDITAR' : 'NOVO'} USUÁRIO</h2>
                 <form onsubmit="salvarUser(event)">
-                    <input type="hidden" id="userId" value="${userEdit ? userEdit.id : ''}">
+                    <input type="hidden" id="userId" value="${isEditing ? userEdit.id : ''}">
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px">
                         <div class="form-group"><label>Nome Completo</label><input type="text" id="nome" value="${userEdit?.nomeCompleto || ''}" required></div>
                         <div class="form-group"><label>E-mail</label><input type="email" id="email" value="${userEdit?.email || ''}" required></div>
                         <div class="form-group"><label>Usuário</label><input type="text" id="user" value="${userEdit?.usuario || ''}" required></div>
                         <div class="form-group">
-                            <label>Tipo de Conta</label>
+                            <label>Tipo</label>
                             <select id="tipo">
                                 <option value="Normal" ${userEdit?.tipo === 'Normal' ? 'selected' : ''}>Normal</option>
                                 <option value="Administrador" ${userEdit?.tipo === 'Administrador' ? 'selected' : ''}>Administrador</option>
@@ -272,8 +270,11 @@ function renderAdicionaUsuario(id = null) {
                         <div class="form-group"><label>Senha</label><input type="password" id="pass" required></div>
                         <div class="form-group"><label>Confirmação</label><input type="password" id="passC" required></div>
                     </div>
-                    <button type="submit" class="btn-primary" style="width:100%; margin-top:10px">GRAVAR CADASTRO</button>
-                    <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="navegar('Login')">CANCELAR</button>
+                    <button type="submit" class="btn-primary" style="width:100%; margin-top:10px">GRAVAR</button>
+                    <button type="button" class="btn-outline" style="width:100%; margin-top:10px" 
+                        onclick="${usuarioLogado ? "navegar('Configuracoes', 'usuarios', 'cadastros')" : "navegar('Login')" }">
+                        CANCELAR
+                    </button>
                 </form>
             </div>
         </div>
@@ -283,7 +284,6 @@ function renderAdicionaUsuario(id = null) {
 function salvarUser(e) {
     e.preventDefault();
     if(document.getElementById('pass').value !== document.getElementById('passC').value) return alert("Senhas não conferem!");
-    
     const id = document.getElementById('userId').value;
     const list = getUsuarios();
     const inputU = document.getElementById('user').value;
@@ -296,19 +296,17 @@ function salvarUser(e) {
         usuario: inputU,
         tipo: document.getElementById('tipo').value,
         senha: document.getElementById('pass').value,
-        permissoes: exist ? exist.permissoes : [], // Mantém permissões existentes se for edição
+        permissoes: exist ? exist.permissoes : (document.getElementById('tipo').value === 'Administrador' ? BOTOES_MENU.map(b => b.id) : []),
         ativo: exist ? exist.ativo : true
     };
     
-    const newList = exist ? list.map(u => u.id == exist.id ? dados : u) : [...list, dados];
-    saveUsuarios(newList);
-    alert("Usuário salvo com sucesso!");
-    navegar('Login');
+    saveUsuarios(exist ? list.map(u => u.id == exist.id ? dados : u) : [...list, dados]);
+    alert("Usuário salvo!");
+    usuarioLogado ? navegar('Configuracoes', 'usuarios', 'cadastros') : navegar('Login');
 }
 
 function toggleStatusUser() {
-    const list = getUsuarios().map(u => u.id == usuarioSelecionado.id ? {...u, ativo: !u.ativo} : u);
-    saveUsuarios(list);
+    saveUsuarios(getUsuarios().map(u => u.id == usuarioSelecionado.id ? {...u, ativo: !u.ativo} : u));
     renderConfiguracoes('usuarios', 'cadastros');
 }
 
