@@ -143,6 +143,7 @@ function renderConfigGeralUI() {
                 <input type="checkbox" id="checkOrdem" style="width:18px; height:18px; accent-color:var(--primary)" 
                     ${cfg.controlaOrdem ? 'checked' : ''} onchange="saveConfig({controlaOrdem: this.checked})">
                 <label for="checkOrdem" style="display:inline; text-transform:none; margin:0 0 0 10px; cursor:pointer">Controla ordem de chegada</label>
+                <i class="fas fa-info-circle info-icon" title="Quando marcada, habilitará o controle por ordem de chegada."></i>
             </div>
         </div>
     `;
@@ -168,7 +169,6 @@ function renderTabelaUsuarios() {
 }
 
 function tentarEditar() {
-    // Bloqueia Normal de editar Administrador
     if(usuarioLogado.tipo === 'Normal' && usuarioSelecionado.tipo === 'Administrador') {
         alert("Erro hierárquico: Um usuário Normal não pode alterar dados de um Administrador.");
         return;
@@ -199,7 +199,6 @@ function selecionarUser(id, el) {
     }
 }
 
-// --- GESTÃO DE PERFIS (ADMIN ONLY) ---
 function renderModuloPerfis() {
     const usuarios = getUsuarios();
     return `
@@ -246,13 +245,10 @@ function carregarPerfilUser(id) {
 function salvarPerfil(e, userId) {
     e.preventDefault();
     const userTarget = getUsuarios().find(u => u.id === userId);
-    
-    // Trava de segurança extra
     if(usuarioLogado.tipo === 'Normal' && userTarget.tipo === 'Administrador') {
         alert("Ação negada: Usuários normais não podem alterar perfis de administradores.");
         return;
     }
-
     const selecionados = Array.from(document.querySelectorAll('#formPerms input:checked')).map(i => i.value);
     const list = getUsuarios().map(u => u.id === userId ? {...u, permissoes: selecionados} : u);
     saveUsuarios(list);
@@ -261,7 +257,6 @@ function salvarPerfil(e, userId) {
     renderConfiguracoes('usuarios', 'perfis');
 }
 
-// --- TELA ADICIONA/EDITA ---
 function renderAdicionaUsuario(id = null) {
     const userEdit = id ? getUsuarios().find(u => u.id == id) : null;
     const isEditing = !!userEdit;
@@ -300,12 +295,10 @@ function renderAdicionaUsuario(id = null) {
 function salvarUser(e) {
     e.preventDefault();
     if(document.getElementById('pass').value !== document.getElementById('passC').value) return alert("Senhas não conferem!");
-    
     const id = document.getElementById('userId').value;
     const list = getUsuarios();
     const userTarget = id ? list.find(u => u.id == id) : null;
 
-    // Trava de senha/segurança: Normal não edita Admin
     if(usuarioLogado && usuarioLogado.tipo === 'Normal' && userTarget?.tipo === 'Administrador') {
         alert("Erro de permissão: Você não pode alterar dados de um administrador.");
         return;

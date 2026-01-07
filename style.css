@@ -63,6 +63,9 @@ th { text-align: left; padding: 10px; color: var(--text-dim); font-size: 0.75rem
 td { padding: 12px; background: #222; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 tr.selected td { background: #2d2a1e; border-top: 1px solid var(--primary); border-bottom: 1px solid var(--primary); }
 
+/* Info Icon */
+.info-icon { color: var(--primary); cursor: help; font-size: 0.9rem; margin-left: 8px; }
+
 /* Perfis Grid */
 .perfis-grid { display: grid; grid-template-columns: 320px 1fr; gap: 30px; align-items: start; }
 .permissions-card { background: #222; padding: 25px; border-radius: 12px; border: 1px solid var(--border); }
