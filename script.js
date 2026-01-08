@@ -180,11 +180,17 @@ function atualizarTabela(lista) {
     const corpo = document.getElementById('listaCorpo');
     if(!corpo) return;
     corpo.innerHTML = lista.map(u => `
-        <tr onclick="selecionarUser(${u.id}, this)" style="cursor:pointer">
+        <tr onclick="selecionarUser(${u.id}, this)" style="cursor:pointer" id="row_${u.id}">
             <td>${u.nomeCompleto}</td><td>${u.email}</td><td>@${u.usuario}</td><td>${u.tipo}</td>
             <td style="color:${u.ativo ? 'var(--success)' : 'var(--danger)'}">${u.ativo ? 'Ativo' : 'Inativo'}</td>
         </tr>
     `).join('');
+    
+    // Se havia um selecionado, re-seleciona visualmente
+    if(usuarioSelecionado) {
+        const row = document.getElementById(`row_${usuarioSelecionado.id}`);
+        if(row) row.classList.add('selected');
+    }
 }
 
 function selecionarUser(id, el) {
@@ -192,11 +198,30 @@ function selecionarUser(id, el) {
     document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
     el.classList.add('selected');
     usuarioSelecionado = getUsuarios().find(u => u.id == id);
+    
     document.getElementById('btnEdit').disabled = false;
     if(isAdmin) {
         document.getElementById('btnStatus').disabled = false;
         document.getElementById('btnDelete').disabled = usuarioSelecionado.ativo;
     }
+}
+
+function toggleStatusUser() {
+    if(!usuarioSelecionado) return;
+    const lista = getUsuarios();
+    const novaLista = lista.map(u => {
+        if(u.id === usuarioSelecionado.id) {
+            const novoStatus = !u.ativo;
+            usuarioSelecionado.ativo = novoStatus; // Atualiza a referência local
+            return {...u, ativo: novoStatus};
+        }
+        return u;
+    });
+    saveUsuarios(novaLista);
+    atualizarTabela(novaLista);
+    
+    // Atualiza botão de deletar com base no novo status
+    document.getElementById('btnDelete').disabled = usuarioSelecionado.ativo;
 }
 
 function renderModuloPerfis() {
@@ -225,6 +250,9 @@ function carregarPerfilUser(id) {
     const user = getUsuarios().find(u => u.id == id);
     usuarioSelecionado = user;
     const perms = user.permissoes || [];
+    
+    // Atualiza botões da esquerda
+    document.querySelectorAll('.perfis-grid .btn-outline').forEach(btn => btn.style.borderColor = 'var(--border)');
     
     document.getElementById('permEditor').innerHTML = `
         <div class="permissions-card">
@@ -263,9 +291,6 @@ function salvarPerfil(e, userId) {
 function renderAdicionaUsuario(id = null) {
     const userEdit = id ? getUsuarios().find(u => u.id == id) : null;
     const isEditing = !!userEdit;
-    
-    // Se não há ninguém logado, é "Esqueci minha senha" ou "Primeiro Acesso".
-    // Nesses casos, o tipo deve ser travado.
     const isRecoveryMode = !usuarioLogado;
 
     app.innerHTML = `
@@ -327,14 +352,11 @@ function salvarUser(e) {
     usuarioLogado ? navegar('Configuracoes', 'usuarios', 'cadastros') : navegar('Login');
 }
 
-function toggleStatusUser() {
-    saveUsuarios(getUsuarios().map(u => u.id == usuarioSelecionado.id ? {...u, ativo: !u.ativo} : u));
-    renderConfiguracoes('usuarios', 'cadastros');
-}
-
 function excluirUser() {
+    if(!usuarioSelecionado) return;
     if(confirm('Excluir definitivamente?')) {
         saveUsuarios(getUsuarios().filter(u => u.id != usuarioSelecionado.id));
+        usuarioSelecionado = null;
         renderConfiguracoes('usuarios', 'cadastros');
     }
 }
