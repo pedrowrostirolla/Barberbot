@@ -138,7 +138,7 @@ function renderConfigGeralUI() {
     const cfg = getConfig();
     return `
         <div style="background:#222; padding:20px; border-radius:8px; border:1px solid var(--border)">
-            <h3 style="margin-top:0; font-size:1rem; color:var(--primary)">Sistema</h3>
+            <h3 style="margin-top:0; font-size:1rem; color:var(--primary)">Preferências</h3>
             <div style="display:flex; align-items:center;">
                 <input type="checkbox" id="checkOrdem" style="width:18px; height:18px; accent-color:var(--primary)" 
                     ${cfg.controlaOrdem ? 'checked' : ''} onchange="saveConfig({controlaOrdem: this.checked})">
@@ -208,7 +208,10 @@ function renderModuloPerfis() {
                 <div style="display:flex; flex-direction:column; gap:8px">
                     ${usuarios.map(u => `
                         <button class="btn-outline" style="text-align:left; padding:12px; font-size:0.8rem; border-color:${usuarioSelecionado?.id === u.id ? 'var(--primary)' : 'var(--border)'}" onclick="carregarPerfilUser(${u.id})">
-                            ${u.nomeCompleto} <br><small style="color:var(--text-dim)">@${u.usuario}</small>
+                            ${u.nomeCompleto} <br>
+                            <small style="color:${u.tipo === 'Administrador' ? 'var(--primary)' : 'var(--text-dim)'}; text-transform:uppercase; font-size:0.65rem; font-weight:700">
+                                ${u.tipo} • @${u.usuario}
+                            </small>
                         </button>
                     `).join('')}
                 </div>
@@ -260,6 +263,10 @@ function salvarPerfil(e, userId) {
 function renderAdicionaUsuario(id = null) {
     const userEdit = id ? getUsuarios().find(u => u.id == id) : null;
     const isEditing = !!userEdit;
+    
+    // Se não há ninguém logado, é "Esqueci minha senha" ou "Primeiro Acesso".
+    // Nesses casos, o tipo deve ser travado.
+    const isRecoveryMode = !usuarioLogado;
 
     app.innerHTML = `
         <div class="view-centered">
@@ -273,7 +280,7 @@ function renderAdicionaUsuario(id = null) {
                         <div class="form-group"><label>Usuário</label><input type="text" id="user" value="${userEdit?.usuario || ''}" required></div>
                         <div class="form-group">
                             <label>Tipo</label>
-                            <select id="tipo" ${isEditing && usuarioLogado.tipo === 'Normal' ? 'disabled' : ''}>
+                            <select id="tipo" ${isRecoveryMode || (isEditing && usuarioLogado.tipo === 'Normal') ? 'disabled' : ''}>
                                 <option value="Normal" ${userEdit?.tipo === 'Normal' ? 'selected' : ''}>Normal</option>
                                 <option value="Administrador" ${userEdit?.tipo === 'Administrador' ? 'selected' : ''}>Administrador</option>
                             </select>
