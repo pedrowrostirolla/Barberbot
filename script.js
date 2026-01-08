@@ -1,5 +1,5 @@
 /**
- * BARBERBOT PRO - V 3.6 (CORREÇÃO DE LOGIN E ADMIN DEFAULT)
+ * BARBERBOT PRO - V 3.5 (INTEGRAL E ATUALIZADO)
  */
 
 const DB_KEY = 'barberbot_usuarios';
@@ -22,26 +22,19 @@ const BOTOES_MENU = [
 const getData = (key) => JSON.parse(localStorage.getItem(key)) || [];
 const setData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
-// --- GARANTIA DO ADMIN DEFAULT ---
-const inicializarSistema = () => {
+// --- INIT ---
+const initSys = () => {
     let users = getData(DB_KEY);
-    const adminExiste = users.find(u => u.usuario === 'admin');
-    
-    if (!adminExiste) {
+    if (!users.some(u => u.usuario === 'admin')) {
         users.push({
-            id: 9999,
-            nomeCompleto: 'Administrador Mestre',
-            email: 'admin@barberbot.pro',
-            usuario: 'admin',
-            senha: 'admin',
-            tipo: 'Administrador',
-            permissoes: BOTOES_MENU.map(b => b.id),
-            ativo: true
+            id: 9999, nomeCompleto: 'Administrador Mestre', email: 'admin@barberbot.pro',
+            usuario: 'admin', senha: 'admin', tipo: 'Administrador',
+            permissoes: BOTOES_MENU.map(b => b.id), ativo: true
         });
         setData(DB_KEY, users);
     }
 };
-inicializarSistema();
+initSys();
 
 // --- NAVEGAÇÃO ---
 function navegar(tela, params = null) {
@@ -74,26 +67,27 @@ function renderHeader() {
     `;
 }
 
-// --- TELA LOGIN ---
+// --- LOGIN ---
 function renderLogin() {
     usuarioLogado = null;
     app.innerHTML = `
-        <div class="view-centered">
-            <div class="container" style="text-align:center">
-                <div style="margin-bottom:2rem; color:var(--primary)">
+        <div class="view-centered" style="min-height:100vh">
+            <div class="container">
+                <div style="text-align:center; margin-bottom:2rem; color:var(--primary)">
                     <i class="fas fa-scissors fa-3x"></i>
                     <h2 class="logo-text" style="margin-top:10px">BARBERBOT <b>PRO</b></h2>
                 </div>
-                <div id="loginErr" style="display:none; color:var(--danger); font-size:0.8rem; margin-bottom:10px">Usuário/Senha inválidos ou conta inativa.</div>
+                <div id="loginErr" style="display:none; color:var(--danger); font-size:0.8rem; text-align:center; margin-bottom:10px">Usuário/Senha inválidos ou conta inativa.</div>
                 <div class="form-group"><label>Usuário</label><input type="text" id="l_user"></div>
                 <div class="form-group"><label>Senha</label><input type="password" id="l_pass"></div>
-                <button class="btn-primary" onclick="login()">ENTRAR</button>
-                <button class="btn-text" onclick="navegar('AdicionaUsuario')">Primeiro acesso?</button>
+                <button class="btn-primary" style="width:100%" onclick="login()">ENTRAR</button>
             </div>
         </div>
     `;
-    const inps = [document.getElementById('l_user'), document.getElementById('l_pass')];
-    inps.forEach(i => i.addEventListener('keypress', (e) => { if(e.key === 'Enter') login(); }));
+    const inputs = [document.getElementById('l_user'), document.getElementById('l_pass')];
+    inputs.forEach(input => {
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
+    });
 }
 
 function login() {
@@ -128,20 +122,26 @@ function renderDashboard() {
 
 // --- MÓDULO PRODUTOS ---
 function renderTelaProduto() {
+    const perms = usuarioLogado.permissoes || [];
     app.innerHTML = `
         ${renderHeader()}
         <div class="content-wrapper">
+            <nav class="nav-menu">
+                ${BOTOES_MENU.filter(item => perms.includes(item.id)).map(item => `
+                    <button class="nav-btn ${item.id === 'produto' ? 'active' : ''}" onclick="navegar('${item.tela}')">${item.label}</button>
+                `).join('')}
+            </nav>
             <div class="container wide">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px">
                     <h2>Produtos</h2>
                     <div style="display:flex; gap:10px">
-                        <input type="text" id="p_filter" placeholder="Buscar..." oninput="filtrarProds()" style="width:250px">
-                        <button class="btn-primary" style="width:auto" onclick="navegar('NovoProduto')">NOVO</button>
+                        <input type="text" id="p_filter" placeholder="Buscar por nome, categoria ou marca..." oninput="filtrarProds()" style="width:300px">
+                        <button class="btn-primary" onclick="navegar('NovoProduto')">NOVO</button>
                     </div>
                 </div>
                 <div style="margin-bottom:15px; display:flex; gap:10px">
-                    <button id="p_edit" class="btn-outline" style="width:auto" disabled onclick="editarProd()">Editar</button>
-                    <button id="p_status" class="btn-outline" style="width:auto" disabled onclick="toggleStatusProd()">Ativar/Desativar</button>
+                    <button id="p_edit" class="btn-outline" disabled onclick="editarProd()">Editar</button>
+                    <button id="p_status" class="btn-outline" disabled onclick="toggleStatusProd()">Ativar/Desativar</button>
                 </div>
                 <table>
                     <thead><tr><th>Descrição</th><th>Categoria</th><th>Marca</th><th>Qtd</th><th>Venda</th><th>Status</th></tr></thead>
@@ -158,19 +158,14 @@ function atualizarTabelaProd(lista) {
     if(!tbody) return;
     tbody.innerHTML = lista.map(p => `
         <tr onclick="selecionarProd(${p.id}, this)" style="cursor:pointer">
-            <td>${p.descricao}</td><td>${p.categoria || '-'}</td><td>${p.marca || '-'}</td>
-            <td>${p.quantidade}</td><td style="color:var(--primary); font-weight:700">R$ ${parseFloat(p.valorVenda).toFixed(2)}</td>
+            <td>${p.descricao}</td>
+            <td style="color:var(--text-dim)">${p.categoria || '-'}</td>
+            <td style="color:var(--text-dim)">${p.marca || '-'}</td>
+            <td>${p.quantidade}</td>
+            <td style="color:var(--primary); font-weight:700">R$ ${parseFloat(p.valorVenda).toFixed(2)}</td>
             <td><span class="status-tag ${p.ativo ? 'active-tag' : 'inactive-tag'}">${p.ativo ? 'Ativo' : 'Inativo'}</span></td>
         </tr>
     `).join('');
-}
-
-function selecionarProd(id, el) {
-    document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
-    el.classList.add('selected');
-    itemSelecionado = getData(PROD_KEY).find(p => p.id === id);
-    document.getElementById('p_edit').disabled = !itemSelecionado.ativo;
-    document.getElementById('p_status').disabled = false;
 }
 
 function filtrarProds() {
@@ -183,12 +178,20 @@ function filtrarProds() {
     atualizarTabelaProd(filtrados);
 }
 
-function editarProd() { if(itemSelecionado?.ativo) navegar('NovoProduto', itemSelecionado.id); }
+function selecionarProd(id, el) {
+    document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    itemSelecionado = getData(PROD_KEY).find(p => p.id === id);
+    document.getElementById('p_edit').disabled = !itemSelecionado.ativo;
+    document.getElementById('p_status').disabled = false;
+}
 
 function toggleStatusProd() {
     const list = getData(PROD_KEY).map(p => { if(p.id === itemSelecionado.id) p.ativo = !p.ativo; return p; });
     setData(PROD_KEY, list); renderTelaProduto();
 }
+
+function editarProd() { if(itemSelecionado?.ativo) navegar('NovoProduto', itemSelecionado.id); }
 
 function renderFormProduto(id = null) {
     const prod = id ? getData(PROD_KEY).find(p => p.id == id) : null;
@@ -200,15 +203,24 @@ function renderFormProduto(id = null) {
                     <h3>${prod ? 'EDITAR' : 'NOVO'} PRODUTO</h3>
                     <form onsubmit="gravarProduto(event)">
                         <input type="hidden" id="fp_id" value="${prod?.id || ''}">
-                        <div class="form-group"><label>Descrição</label><input type="text" id="fp_desc" value="${prod?.descricao || ''}" required></div>
+                        
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <input type="text" id="fp_desc" value="${prod?.descricao || ''}" required>
+                        </div>
+
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-                            <div class="form-group"><label>Quantidade</label><input type="number" id="fp_qtd" value="${prod?.quantidade || 0}" required></div>
+                            <div class="form-group">
+                                <label>Quantidade</label>
+                                <input type="number" id="fp_qtd" value="${prod?.quantidade || 0}" required>
+                            </div>
                             <div class="form-group">
                                 <label>Valor Compra (R$)</label>
                                 <input type="number" step="0.01" id="fp_vcompra" value="${prod?.valorCompra || ''}" required oninput="calcVenda()">
                                 <small class="hint-text">Custo+Frete+Impostos</small>
                             </div>
                         </div>
+
                         <div class="form-group">
                             <label>Categoria</label>
                             <select id="fp_cat">
@@ -217,18 +229,35 @@ function renderFormProduto(id = null) {
                                 <option value="Outros" ${prod?.categoria === 'Outros' ? 'selected' : ''}>Outros</option>
                             </select>
                         </div>
+
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-                            <div class="form-group"><label>Markup (%)</label><input type="number" id="fp_markup" value="${prod?.markup || 0}" required oninput="calcVenda()"></div>
-                            <div class="form-group"><label>Valor Venda (R$)</label><input type="number" step="0.01" id="fp_vvenda" value="${prod?.valorVenda || ''}" required></div>
+                            <div class="form-group">
+                                <label>Markup (%)</label>
+                                <input type="number" id="fp_markup" value="${prod?.markup || 0}" required oninput="calcVenda()">
+                            </div>
+                            <div class="form-group">
+                                <label>Valor Venda (R$)</label>
+                                <input type="number" step="0.01" id="fp_vvenda" value="${prod?.valorVenda || ''}" required>
+                            </div>
                         </div>
-                        <div class="form-group"><label>Marca / Fornecedor</label><input type="text" id="fp_marca" value="${prod?.marca || ''}"></div>
-                        <div class="form-group"><label>Observações</label><textarea id="fp_obs">${prod?.obs || ''}</textarea></div>
+
+                        <div class="form-group">
+                            <label>Marca / Fornecedor</label>
+                            <input type="text" id="fp_marca" value="${prod?.marca || ''}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Observações</label>
+                            <textarea id="fp_obs">${prod?.obs || ''}</textarea>
+                        </div>
+
                         <div style="display:flex; gap:20px; margin-bottom:20px">
                             <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_disp" ${prod?.disponivel !== false ? 'checked' : ''} style="width:16px"> Disponível</label>
                             <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_ativo" ${prod?.ativo !== false ? 'checked' : ''} style="width:16px"> Ativo</label>
                         </div>
-                        <button type="submit" class="btn-primary">GRAVAR PRODUTO</button>
-                        <button type="button" class="btn-outline" style="margin-top:10px" onclick="navegar('Produto')">CANCELAR</button>
+
+                        <button type="submit" class="btn-primary" style="width:100%">GRAVAR PRODUTO</button>
+                        <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="navegar('Produto')">CANCELAR</button>
                     </form>
                 </div>
             </div>
@@ -239,7 +268,9 @@ function renderFormProduto(id = null) {
 function calcVenda() {
     const c = parseFloat(document.getElementById('fp_vcompra').value) || 0;
     const m = parseFloat(document.getElementById('fp_markup').value) || 0;
-    document.getElementById('fp_vvenda').value = (c * (1 + (m / 100))).toFixed(2);
+    const res = (c * (1 + (m / 100))).toFixed(2);
+    const field = document.getElementById('fp_vvenda');
+    if(field) field.value = res;
 }
 
 function gravarProduto(e) {
@@ -259,11 +290,97 @@ function gravarProduto(e) {
         disponivel: document.getElementById('fp_disp').checked,
         ativo: document.getElementById('fp_ativo').checked
     };
-    if(id) { const idx = list.findIndex(p => p.id == id); list[idx] = dados; } else { list.push(dados); }
+    if(id) { const idx = list.findIndex(p => p.id == id); list[idx] = dados; } 
+    else { list.push(dados); }
     setData(PROD_KEY, list); navegar('Produto');
 }
 
-// --- USUÁRIOS E CONFIG ---
+// --- CONFIGURAÇÕES ---
+function renderConfiguracoes(aba, sub = 'cadastros') {
+    const perms = usuarioLogado.permissoes || [];
+    app.innerHTML = `
+        ${renderHeader()}
+        <div class="content-wrapper">
+            <nav class="nav-menu">
+                ${BOTOES_MENU.filter(item => perms.includes(item.id)).map(item => `
+                    <button class="nav-btn ${item.id === 'config' ? 'active' : ''}" onclick="navegar('${item.tela}')">${item.label}</button>
+                `).join('')}
+            </nav>
+            <div class="container wide">
+                <h2>Configurações</h2>
+                <div class="tabs-container">
+                    <button class="tab-btn ${aba === 'gerais' ? 'active' : ''}" onclick="navegar('Configuracoes', 'gerais')">Gerais</button>
+                    <button class="tab-btn ${aba === 'usuarios' ? 'active' : ''}" onclick="navegar('Configuracoes', 'usuarios')">Usuários</button>
+                </div>
+                <div id="cfg_content">
+                    ${aba === 'gerais' ? `
+                        <div class="sub-tabs"><button class="sub-tab-btn active">Gerais</button></div>
+                        <div style="background:#222; padding:25px; border-radius:8px; border:1px solid var(--border)">
+                            <h3 style="margin-top:0; font-size:1rem; color:var(--primary)">Preferências</h3>
+                            <div style="display:flex; align-items:center; gap:12px">
+                                <input type="checkbox" id="c_ordem" ${getData(CFG_KEY).controlaOrdem ? 'checked' : ''} onchange="setData(CFG_KEY, {controlaOrdem: this.checked})" style="width:18px; height:18px; cursor:pointer">
+                                <label for="c_ordem" style="text-transform:none; margin:0; cursor:pointer; font-size:0.9rem">Controla ordem de chegada</label>
+                                <i class="fas fa-info-circle" style="color:var(--primary); cursor:help" title="Habilita módulo de fila"></i>
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${aba === 'usuarios' ? `
+                        <div class="sub-tabs">
+                            <button class="sub-tab-btn ${sub === 'cadastros' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'cadastros')">Cadastros</button>
+                            ${usuarioLogado.tipo === 'Administrador' ? `<button class="sub-tab-btn ${sub === 'perfis' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'perfis')">Perfis</button>` : ''}
+                        </div>
+                        ${sub === 'cadastros' ? renderTabelaUsers() : renderPerfis()}
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    if(aba === 'usuarios' && sub === 'cadastros') atualizarTabelaUsers(getData(DB_KEY));
+}
+
+function renderTabelaUsers() {
+    return `
+        <div style="display:flex; gap:10px; margin-bottom:15px">
+            <button id="u_edit" class="btn-outline" disabled onclick="editarUser()">Editar</button>
+            <button id="u_status" class="btn-outline" disabled onclick="toggleStatusUser()">Ativar/Desativar</button>
+            ${usuarioLogado.tipo === 'Administrador' ? `<button class="btn-primary" onclick="navegar('AdicionaUsuario')" style="margin-left:auto">+ NOVO</button>` : ''}
+        </div>
+        <table>
+            <thead><tr><th>Nome</th><th>Usuário</th><th>Tipo</th><th>Status</th></tr></thead>
+            <tbody id="u_lista"></tbody>
+        </table>
+    `;
+}
+
+function atualizarTabelaUsers(lista) {
+    const tbody = document.getElementById('u_lista');
+    if(!tbody) return;
+    tbody.innerHTML = lista.map(u => `
+        <tr onclick="selecionarUser(${u.id}, this)" style="cursor:pointer">
+            <td>${u.nomeCompleto}</td><td>@${u.usuario}</td><td>${u.tipo}</td>
+            <td style="color:${u.ativo ? 'var(--success)' : 'var(--danger)'}">${u.ativo ? 'Ativo' : 'Inativo'}</td>
+        </tr>
+    `).join('');
+}
+
+function selecionarUser(id, el) {
+    document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    itemSelecionado = getData(DB_KEY).find(u => u.id === id);
+    document.getElementById('u_edit').disabled = false;
+    if(usuarioLogado.tipo === 'Administrador') document.getElementById('u_status').disabled = false;
+}
+
+function toggleStatusUser() {
+    const list = getData(DB_KEY).map(u => { if(u.id === itemSelecionado.id) u.ativo = !u.ativo; return u; });
+    setData(DB_KEY, list); renderConfiguracoes('usuarios', 'cadastros');
+}
+
+function editarUser() {
+    if(usuarioLogado.tipo === 'Normal' && itemSelecionado.tipo === 'Administrador') return alert("Ação negada.");
+    navegar('AdicionaUsuario', itemSelecionado.id);
+}
+
 function renderFormUsuario(id = null) {
     const user = id ? getData(DB_KEY).find(u => u.id == id) : null;
     const isFirst = !usuarioLogado;
@@ -283,14 +400,14 @@ function renderFormUsuario(id = null) {
                                 <label>Tipo</label>
                                 <select id="fu_tipo" ${isFirst || (user && usuarioLogado.tipo === 'Normal') ? 'disabled' : ''}>
                                     <option value="Normal" ${user?.tipo === 'Normal' ? 'selected' : ''}>Normal</option>
-                                    <option value="Administrador" ${isFirst || user?.tipo === 'Administrador' ? 'selected' : ''}>Administrador</option>
+                                    <option value="Administrador" ${user?.tipo === 'Administrador' ? 'selected' : ''}>Administrador</option>
                                 </select>
                             </div>
                             <div class="form-group"><label>Senha</label><input type="password" id="fu_pass" required></div>
                             <div class="form-group"><label>Confirmar</label><input type="password" id="fu_passc" required></div>
                         </div>
-                        <button type="submit" class="btn-primary" style="margin-top:10px">GRAVAR</button>
-                        <button type="button" class="btn-outline" style="margin-top:10px" onclick="${isFirst ? "navegar('Login')" : "navegar('Configuracoes', 'usuarios')" }">CANCELAR</button>
+                        <button type="submit" class="btn-primary" style="width:100%; margin-top:10px">GRAVAR</button>
+                        <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="${isFirst ? "navegar('Login')" : "navegar('Configuracoes', 'usuarios')" }">CANCELAR</button>
                     </form>
                 </div>
             </div>
@@ -311,48 +428,44 @@ function salvarUser(e) {
         tipo: document.getElementById('fu_tipo').value,
         senha: document.getElementById('fu_pass').value,
         permissoes: id ? list.find(u => u.id == id).permissoes : (document.getElementById('fu_tipo').value === 'Administrador' ? BOTOES_MENU.map(b => b.id) : []),
-        ativo: true
+        ativo: id ? list.find(u => u.id == id).ativo : true
     };
     setData(DB_KEY, id ? list.map(u => u.id == id ? dados : u) : [...list, dados]);
     usuarioLogado ? navegar('Configuracoes', 'usuarios') : navegar('Login');
 }
 
-function renderConfiguracoes(aba, sub = 'cadastros') {
-    app.innerHTML = `
-        ${renderHeader()}
-        <div class="content-wrapper">
-            <div class="container wide">
-                <h2>Configurações</h2>
-                <div class="tabs-container">
-                    <button class="tab-btn ${aba === 'gerais' ? 'active' : ''}" onclick="navegar('Configuracoes', 'gerais')">Gerais</button>
-                    <button class="tab-btn ${aba === 'usuarios' ? 'active' : ''}" onclick="navegar('Configuracoes', 'usuarios')">Usuários</button>
-                </div>
-                ${aba === 'gerais' ? `
-                    <div style="background:#222; padding:25px; border-radius:8px; border:1px solid var(--border)">
-                        <div style="display:flex; align-items:center; gap:12px">
-                            <input type="checkbox" id="c_ordem" ${getData(CFG_KEY).controlaOrdem ? 'checked' : ''} onchange="setData(CFG_KEY, {controlaOrdem: this.checked})" style="width:18px; height:18px; cursor:pointer">
-                            <label for="c_ordem" style="text-transform:none; margin:0; cursor:pointer">Controla ordem de chegada</label>
-                            <i class="fas fa-info-circle" style="color:var(--primary)" title="Habilita módulo de fila"></i>
-                        </div>
-                    </div>
-                ` : `
-                    <div class="sub-tabs">
-                        <button class="sub-tab-btn ${sub === 'cadastros' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'cadastros')">Cadastros</button>
-                        ${usuarioLogado.tipo === 'Administrador' ? `<button class="sub-tab-btn ${sub === 'perfis' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'perfis')">Perfis</button>` : ''}
-                    </div>
-                    ${sub === 'cadastros' ? renderTabelaUsers() : renderPerfis()}
-                `}
+function renderPerfis() {
+    const users = getData(DB_KEY);
+    return `
+        <div style="display:grid; grid-template-columns: 300px 1fr; gap:30px">
+            <div style="display:flex; flex-direction:column; gap:8px">
+                ${users.map(u => `<button class="btn-outline" style="width:100%; text-align:left; justify-content:flex-start" onclick="carregarPerfil(${u.id})">${u.nomeCompleto}</button>`).join('')}
             </div>
+            <div id="perfil_editor" style="background:#222; padding:20px; border-radius:8px">Selecione um usuário.</div>
         </div>
     `;
-    if(aba === 'usuarios' && sub === 'cadastros') atualizarTabelaUsers(getData(DB_KEY));
 }
 
-// Funções de apoio omitidas aqui por brevidade, mas mantidas no código real para o funcionamento de tabelas e perfis conforme padrão.
-function renderTabelaUsers() { return `<div style="padding:20px; text-align:center; color:var(--text-dim)">Carregando usuários...</div>`; }
-function atualizarTabelaUsers(l) { 
-    const c = document.getElementById('cfg_content') || document.querySelector('.container.wide');
-    c.innerHTML += `<table style="margin-top:20px"><thead><tr><th>Nome</th><th>Usuário</th><th>Tipo</th></tr></thead><tbody>${l.map(u=>`<tr><td>${u.nomeCompleto}</td><td>${u.usuario}</td><td>${u.tipo}</td></tr>`).join('')}</tbody></table>`;
+function carregarPerfil(id) {
+    const u = getData(DB_KEY).find(x => x.id === id);
+    const perms = u.permissoes || [];
+    document.getElementById('perfil_editor').innerHTML = `
+        <h3 style="margin-top:0">${u.nomeCompleto}</h3>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:15px">
+            ${BOTOES_MENU.map(b => `
+                <label style="display:flex; align-items:center; gap:10px; text-transform:none">
+                    <input type="checkbox" value="${b.id}" ${perms.includes(b.id) ? 'checked' : ''} style="width:18px; height:18px"> ${b.label}
+                </label>
+            `).join('')}
+        </div>
+        <button class="btn-primary" style="margin-top:20px; width:100%" onclick="salvarPerms(${id})">Gravar Acessos</button>
+    `;
+}
+
+function salvarPerms(id) {
+    const checks = Array.from(document.querySelectorAll('#perfil_editor input:checked')).map(i => i.value);
+    const list = getData(DB_KEY).map(u => u.id === id ? {...u, permissoes: checks} : u);
+    setData(DB_KEY, list); alert("Permissões Atualizadas!"); renderConfiguracoes('usuarios', 'perfis');
 }
 
 navegar('Login');
