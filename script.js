@@ -155,8 +155,8 @@ function renderTabelaUsuarios() {
         <div style="display:flex; justify-content:space-between; margin-bottom:15px">
             <div style="display:flex; gap:10px">
                 <button id="btnEdit" class="btn-outline" disabled onclick="tentarEditar()">Editar</button>
-                <button id="btnStatus" class="btn-outline" disabled onclick="isAdmin ? toggleStatusUser() : null" ${!isAdmin ? 'style="display:none"' : ''}>Ativar/Desativar</button>
-                <button id="btnDelete" class="btn-outline" style="color:var(--danger)" disabled onclick="isAdmin ? excluirUser() : null" ${!isAdmin ? 'style="display:none"' : ''}>Excluir</button>
+                <button id="btnStatus" class="btn-outline" disabled onclick="toggleStatusUser()">Ativar/Desativar</button>
+                <button id="btnDelete" class="btn-outline" style="color:var(--danger)" disabled onclick="excluirUser()">Excluir</button>
             </div>
             ${isAdmin ? `<button class="btn-primary" onclick="navegar('AdicionaUsuario')">+ Novo Usuário</button>` : ''}
         </div>
@@ -166,14 +166,6 @@ function renderTabelaUsuarios() {
             <tbody id="listaCorpo"></tbody>
         </table>
     `;
-}
-
-function tentarEditar() {
-    if(usuarioLogado.tipo === 'Normal' && usuarioSelecionado.tipo === 'Administrador') {
-        alert("Erro hierárquico: Um usuário Normal não pode alterar dados de um Administrador.");
-        return;
-    }
-    navegar('AdicionaUsuario', usuarioSelecionado.id);
 }
 
 function atualizarTabela(lista) {
@@ -186,7 +178,6 @@ function atualizarTabela(lista) {
         </tr>
     `).join('');
     
-    // Se havia um selecionado, re-seleciona visualmente
     if(usuarioSelecionado) {
         const row = document.getElementById(`row_${usuarioSelecionado.id}`);
         if(row) row.classList.add('selected');
@@ -200,9 +191,19 @@ function selecionarUser(id, el) {
     usuarioSelecionado = getUsuarios().find(u => u.id == id);
     
     document.getElementById('btnEdit').disabled = false;
+    
+    // Apenas Admin vê e usa Status/Delete
+    const sBtn = document.getElementById('btnStatus');
+    const dBtn = document.getElementById('btnDelete');
+    
     if(isAdmin) {
-        document.getElementById('btnStatus').disabled = false;
-        document.getElementById('btnDelete').disabled = usuarioSelecionado.ativo;
+        sBtn.style.display = 'inline-block';
+        dBtn.style.display = 'inline-block';
+        sBtn.disabled = false;
+        dBtn.disabled = usuarioSelecionado.ativo; // Não deleta ativos
+    } else {
+        sBtn.style.display = 'none';
+        dBtn.style.display = 'none';
     }
 }
 
@@ -211,17 +212,24 @@ function toggleStatusUser() {
     const lista = getUsuarios();
     const novaLista = lista.map(u => {
         if(u.id === usuarioSelecionado.id) {
-            const novoStatus = !u.ativo;
-            usuarioSelecionado.ativo = novoStatus; // Atualiza a referência local
-            return {...u, ativo: novoStatus};
+            u.ativo = !u.ativo;
+            usuarioSelecionado = {...u}; // Atualiza o objeto global
         }
         return u;
     });
     saveUsuarios(novaLista);
-    atualizarTabela(novaLista);
     
-    // Atualiza botão de deletar com base no novo status
+    // Re-renderiza a tabela e atualiza os botões
+    atualizarTabela(novaLista);
     document.getElementById('btnDelete').disabled = usuarioSelecionado.ativo;
+}
+
+function tentarEditar() {
+    if(usuarioLogado.tipo === 'Normal' && usuarioSelecionado.tipo === 'Administrador') {
+        alert("Erro hierárquico: Um usuário Normal não pode alterar dados de um Administrador.");
+        return;
+    }
+    navegar('AdicionaUsuario', usuarioSelecionado.id);
 }
 
 function renderModuloPerfis() {
@@ -251,7 +259,6 @@ function carregarPerfilUser(id) {
     usuarioSelecionado = user;
     const perms = user.permissoes || [];
     
-    // Atualiza botões da esquerda
     document.querySelectorAll('.perfis-grid .btn-outline').forEach(btn => btn.style.borderColor = 'var(--border)');
     
     document.getElementById('permEditor').innerHTML = `

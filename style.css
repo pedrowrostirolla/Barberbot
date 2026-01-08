@@ -66,11 +66,3 @@ tr.selected td { background: #2d2a1e; border-top: 1px solid var(--primary); bord
 
 /* Info Icon */
 .info-icon { color: var(--primary); cursor: help; font-size: 0.9rem; margin-left: 8px; }
-
-/* Perfis Grid */
-.perfis-grid { display: grid; grid-template-columns: 320px 1fr; gap: 30px; align-items: start; }
-.permissions-card { background: #222; padding: 25px; border-radius: 12px; border: 1px solid var(--border); }
-.perm-list { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
-.perm-item { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-.perm-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
-.perm-item label { text-transform: none; font-size: 0.9rem; color: var(--text); margin: 0; cursor: pointer; }
