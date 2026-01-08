@@ -1,332 +1,318 @@
-/**
- * BARBERBOT PRO - V 3.2
- */
-
 const DB_KEY = 'barberbot_usuarios';
 const CFG_KEY = 'barberbot_config';
-const PROD_KEY = 'barberbot_produtos';
 const app = document.getElementById('app');
 
 let usuarioLogado = null;
-let itemSelecionado = null;
+let usuarioSelecionado = null;
 
 const BOTOES_MENU = [
-    { id: 'produto', label: 'Produto', tela: 'Produto' },
-    { id: 'vendas', label: 'Vendas', tela: 'Vendas' },
-    { id: 'estoque', label: 'Estoque', tela: 'Estoque' },
-    { id: 'ordem', label: 'Ordem de Chegada', tela: 'Ordem' },
-    { id: 'config', label: 'Configurações', tela: 'Configuracoes' }
+    { id: 'produto', label: 'Produto' },
+    { id: 'vendas', label: 'Vendas' },
+    { id: 'estoque', label: 'Estoque' },
+    { id: 'ordem', label: 'Ordem de Chegada' },
+    { id: 'config', label: 'Configurações' }
 ];
 
-// --- STORAGE ---
-const getData = (key) => JSON.parse(localStorage.getItem(key)) || [];
-const setData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-
-// --- ADMIN MESTRE ---
-const init = () => {
-    let users = getData(DB_KEY);
-    if (!users.some(u => u.usuario === 'admin')) {
-        users.push({
-            id: 9999, nomeCompleto: 'Administrador Mestre', email: 'admin@barberbot.pro',
-            usuario: 'admin', senha: 'admin', tipo: 'Administrador',
-            permissoes: BOTOES_MENU.map(b => b.id), ativo: true
-        });
-        setData(DB_KEY, users);
+const getUsuarios = () => {
+    let users = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+    const hasAdmin = users.some(u => u.usuario === 'admin');
+    if (!hasAdmin) {
+        const adminMaster = {
+            id: 9999,
+            nomeCompleto: 'Administrador Mestre',
+            email: 'admin@barberbot.pro',
+            usuario: 'admin',
+            senha: 'admin',
+            tipo: 'Administrador',
+            permissoes: BOTOES_MENU.map(b => b.id),
+            ativo: true
+        };
+        users.push(adminMaster);
+        localStorage.setItem(DB_KEY, JSON.stringify(users));
     }
+    return users;
 };
-init();
 
-// --- NAVEGAÇÃO ---
+const saveUsuarios = (usuarios) => localStorage.setItem(DB_KEY, JSON.stringify(usuarios));
+const getConfig = () => JSON.parse(localStorage.getItem(CFG_KEY)) || { controlaOrdem: false };
+const saveConfig = (cfg) => localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+
 function navegar(tela, params = null) {
-    itemSelecionado = null;
+    usuarioSelecionado = null;
     if (tela === 'Login') renderLogin();
-    if (tela === 'BarberBotPro') renderDashboard();
-    if (tela === 'Configuracoes') renderConfiguracoes(params || 'gerais');
-    if (tela === 'AdicionaUsuario') renderFormUsuario(params);
-    if (tela === 'Produto') renderTelaProduto();
-    if (tela === 'NovoProduto') renderFormProduto(params);
+    if (tela === 'AdicionaUsuario') renderAdicionaUsuario(params);
+    if (tela === 'BarberBotPro') renderBarberBotPro();
+    if (tela === 'Configuracoes') renderConfiguracoes(params);
 }
 
-function renderHeader() {
-    return `
-        <header class="main-header">
-            <div class="logo-area" onclick="navegar('BarberBotPro')">
-                <i class="fas fa-scissors"></i>
-                <span class="logo-text">BARBERBOT <b>PRO</b></span>
-            </div>
-            <div style="display:flex; align-items:center; gap:15px">
-                <div style="text-align:right">
-                    <div style="font-size:0.8rem; font-weight:600">${usuarioLogado.nomeCompleto.split(' ')[0]}</div>
-                    <div style="font-size:0.6rem; color:var(--primary); text-transform:uppercase">${usuarioLogado.tipo}</div>
-                </div>
-                <button onclick="navegar('Login')" style="background:none; color:var(--danger); border:none; font-size:1.2rem"><i class="fas fa-power-off"></i></button>
-            </div>
-        </header>
-    `;
-}
-
-// --- LOGIN ---
+// --- TELA LOGIN ---
 function renderLogin() {
     usuarioLogado = null;
     app.innerHTML = `
         <div class="view-centered">
             <div class="container">
-                <div style="text-align:center; margin-bottom:2rem; color:var(--primary)">
-                    <i class="fas fa-scissors fa-3x"></i>
-                    <h2 class="logo-text" style="margin-top:10px">BARBERBOT <b>PRO</b></h2>
+                <div class="logo-container">
+                    <i class="fas fa-scissors"></i>
+                    <span class="logo-text">BARBERBOT <b>PRO</b></span>
                 </div>
-                <div id="loginErr" style="display:none; color:var(--danger); font-size:0.8rem; text-align:center; margin-bottom:10px">Usuário/Senha inválidos ou conta inativa.</div>
+                <div id="loginError" style="color:var(--danger); display:none; text-align:center; margin-bottom:10px; font-size:0.8rem;">Credenciais incorretas ou usuário inativo.</div>
                 <div class="form-group"><label>Usuário</label><input type="text" id="l_user"></div>
                 <div class="form-group"><label>Senha</label><input type="password" id="l_pass"></div>
-                <button class="btn-primary" style="width:100%" onclick="login()">ENTRAR</button>
+                <button class="btn-primary" style="width:100%" onclick="executarLogin()">ENTRAR</button>
+                <button class="nav-btn" style="width:100%; margin-top:10px; color:var(--text-dim)" onclick="navegar('AdicionaUsuario')">Esqueci minha senha</button>
+                <hr style="border:0; border-top:1px solid var(--border); margin:1.5rem 0;">
+                <button class="btn-outline" style="width:100%" onclick="navegar('AdicionaUsuario')">PRIMEIRO ACESSO</button>
             </div>
+            <div class="dev-footer">Desenvolvido por 9DEV</div>
         </div>
     `;
-    const inputs = [document.getElementById('l_user'), document.getElementById('l_pass')];
-    inputs.forEach(input => {
-        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
+
+    [document.getElementById('l_user'), document.getElementById('l_pass')].forEach(input => {
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') executarLogin(); });
     });
 }
 
-function login() {
+function executarLogin() {
     const u = document.getElementById('l_user').value;
     const p = document.getElementById('l_pass').value;
-    const user = getData(DB_KEY).find(x => x.usuario === u && x.senha === p && x.ativo);
-    if (user) { usuarioLogado = user; navegar('BarberBotPro'); }
-    else { document.getElementById('loginErr').style.display = 'block'; }
+    const user = getUsuarios().find(x => x.usuario === u && x.senha === p && x.ativo);
+    if (user) {
+        usuarioLogado = user;
+        navegar('BarberBotPro');
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
 }
 
-function renderDashboard() {
+// --- TELA PRINCIPAL ---
+function renderBarberBotPro() {
+    const cfg = getConfig();
     const perms = usuarioLogado.permissoes || [];
-    const cfg = getData(CFG_KEY);
+    const deveMostrar = (id) => (id === 'ordem' && !cfg.controlaOrdem) ? false : perms.includes(id);
+
     app.innerHTML = `
-        ${renderHeader()}
-        <nav class="nav-menu" style="background:#151515; border-bottom:1px solid var(--border); padding:0 2rem; justify-content:center">
-            ${BOTOES_MENU.map(item => {
-                if (item.id === 'ordem' && !cfg.controlaOrdem) return '';
-                if (!perms.includes(item.id)) return '';
-                return `<button class="nav-btn" onclick="navegar('${item.tela}')">${item.label}</button>`;
-            }).join('')}
-        </nav>
-        <main style="padding:5rem 2rem; text-align:center">
-            <h1 style="font-weight:300; font-size:2.5rem">Painel de <b style="color:var(--primary)">Gestão</b></h1>
-            <p style="color:var(--text-dim)">Selecione um módulo acima para começar.</p>
+        <header class="main-header">
+            <div class="logo-area">
+                <i class="fas fa-scissors"></i>
+                <span style="letter-spacing:1px">BARBERBOT <b>PRO</b></span>
+            </div>
+            <nav class="nav-menu">
+                ${deveMostrar('produto') ? `<button class="nav-btn">Produto</button>` : ''}
+                ${deveMostrar('vendas') ? `<button class="nav-btn">Vendas</button>` : ''}
+                ${deveMostrar('estoque') ? `<button class="nav-btn">Estoque</button>` : ''}
+                ${deveMostrar('ordem') ? `<button class="nav-btn">Ordem de Chegada</button>` : ''}
+                ${deveMostrar('config') ? `<button class="nav-btn" onclick="navegar('Configuracoes')">Configurações</button>` : ''}
+            </nav>
+            <div class="user-info">
+                <span style="font-size:0.7rem; color:var(--primary); margin-right:8px; border:1px solid; padding:2px 5px; border-radius:4px">${usuarioLogado.tipo.toUpperCase()}</span>
+                <span>Olá, <strong>${usuarioLogado.nomeCompleto.split(' ')[0]}</strong></span>
+                <button onclick="navegar('Login')" style="background:none; color:var(--danger); border:none; cursor:pointer"><i class="fas fa-power-off"></i></button>
+            </div>
+        </header>
+        <main style="padding: 4rem; text-align: center;">
+            <h1 style="color: var(--primary); font-size: 2.5rem;">Dashboard</h1>
         </main>
     `;
 }
 
-// --- PRODUTOS ---
-function renderTelaProduto() {
-    app.innerHTML = `
-        ${renderHeader()}
-        <div class="container wide">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px">
-                <h2>Produtos</h2>
-                <div style="display:flex; gap:10px">
-                    <input type="text" id="p_filter" placeholder="Buscar..." oninput="filtrarProds()" style="width:200px">
-                    <button class="btn-primary" onclick="navegar('NovoProduto')">NOVO</button>
-                </div>
-            </div>
-            <div style="margin-bottom:15px; display:flex; gap:10px">
-                <button id="p_edit" class="btn-outline" disabled onclick="editarProd()">Editar</button>
-                <button id="p_status" class="btn-outline" disabled onclick="toggleStatusProd()">Ativar/Desativar</button>
-            </div>
-            <table>
-                <thead><tr><th>Descrição</th><th>Qtd</th><th>Compra</th><th>Markup</th><th>Venda</th><th>Status</th></tr></thead>
-                <tbody id="p_lista"></tbody>
-            </table>
-        </div>
-    `;
-    atualizarTabelaProd(getData(PROD_KEY));
-}
-
-function atualizarTabelaProd(lista) {
-    const tbody = document.getElementById('p_lista');
-    if(!tbody) return;
-    tbody.innerHTML = lista.map(p => `
-        <tr onclick="selecionarProd(${p.id}, this)" style="cursor:pointer">
-            <td>${p.descricao}</td><td>${p.quantidade}</td><td>R$ ${parseFloat(p.valorCompra).toFixed(2)}</td>
-            <td>${p.markup}%</td><td style="color:var(--primary); font-weight:700">R$ ${parseFloat(p.valorVenda).toFixed(2)}</td>
-            <td><span class="status-tag ${p.ativo ? 'active-tag' : 'inactive-tag'}">${p.ativo ? 'Ativo' : 'Inativo'}</span></td>
-        </tr>
-    `).join('');
-}
-
-function selecionarProd(id, el) {
-    document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
-    el.classList.add('selected');
-    itemSelecionado = getData(PROD_KEY).find(p => p.id === id);
-    document.getElementById('p_edit').disabled = !itemSelecionado.ativo;
-    document.getElementById('p_status').disabled = false;
-}
-
-function filtrarProds() {
-    const val = document.getElementById('p_filter').value.toLowerCase();
-    atualizarTabelaProd(getData(PROD_KEY).filter(p => p.descricao.toLowerCase().includes(val)));
-}
-
-function toggleStatusProd() {
-    const list = getData(PROD_KEY).map(p => { if(p.id === itemSelecionado.id) p.ativo = !p.ativo; return p; });
-    setData(PROD_KEY, list); renderTelaProduto();
-}
-
-function editarProd() { if(itemSelecionado?.ativo) navegar('NovoProduto', itemSelecionado.id); }
-
-function renderFormProduto(id = null) {
-    const prod = id ? getData(PROD_KEY).find(p => p.id == id) : null;
-    app.innerHTML = `
-        ${renderHeader()}
-        <div class="view-centered">
-            <div class="container" style="max-width:550px">
-                <h3>${prod ? 'EDITAR' : 'NOVO'} PRODUTO</h3>
-                <form onsubmit="gravarProduto(event)">
-                    <input type="hidden" id="fp_id" value="${prod?.id || ''}">
-                    <div class="form-group"><label>Descrição</label><input type="text" id="fp_desc" value="${prod?.descricao || ''}" required></div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-                        <div class="form-group"><label>Quantidade</label><input type="number" id="fp_qtd" value="${prod?.quantidade || 0}" required></div>
-                        <div class="form-group"><label>Valor Compra</label><input type="number" step="0.01" id="fp_vcompra" value="${prod?.valorCompra || ''}" required oninput="calcVenda()"><small class="hint-text">Custo+Frete+Impostos</small></div>
-                        <div class="form-group"><label>Markup (%)</label><input type="number" id="fp_markup" value="${prod?.markup || 0}" required oninput="calcVenda()"></div>
-                        <div class="form-group"><label>Valor Venda</label><input type="number" step="0.01" id="fp_vvenda" value="${prod?.valorVenda || ''}" required></div>
-                    </div>
-                    <div style="display:flex; gap:20px; margin:15px 0">
-                        <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_disp" ${prod?.disponivel !== false ? 'checked' : ''} style="width:16px"> Disponível</label>
-                        <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_ativo" ${prod?.ativo !== false ? 'checked' : ''} style="width:16px"> Ativo</label>
-                    </div>
-                    <button type="submit" class="btn-primary" style="width:100%">GRAVAR</button>
-                    <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="navegar('Produto')">CANCELAR</button>
-                </form>
-            </div>
-        </div>
-    `;
-}
-
-function calcVenda() {
-    const c = parseFloat(document.getElementById('fp_vcompra').value) || 0;
-    const m = parseFloat(document.getElementById('fp_markup').value) || 0;
-    document.getElementById('fp_vvenda').value = (c * (1 + (m / 100))).toFixed(2);
-}
-
-function gravarProduto(e) {
-    e.preventDefault();
-    const id = document.getElementById('fp_id').value;
-    const list = getData(PROD_KEY);
-    const dados = {
-        id: id ? parseInt(id) : Date.now(),
-        descricao: document.getElementById('fp_desc').value,
-        quantidade: document.getElementById('fp_qtd').value,
-        valorCompra: document.getElementById('fp_vcompra').value,
-        markup: document.getElementById('fp_markup').value,
-        valorVenda: document.getElementById('fp_vvenda').value,
-        disponivel: document.getElementById('fp_disp').checked,
-        ativo: document.getElementById('fp_ativo').checked
-    };
-    if(id) { const idx = list.findIndex(p => p.id == id); list[idx] = dados; } else { list.push(dados); }
-    setData(PROD_KEY, list); navegar('Produto');
-}
-
 // --- CONFIGURAÇÕES ---
-function renderConfiguracoes(aba, sub = 'cadastros') {
+function renderConfiguracoes(aba = 'gerais', sub = 'gerais') {
+    const isAdmin = usuarioLogado.tipo === 'Administrador';
+
     app.innerHTML = `
-        ${renderHeader()}
+        <header class="main-header">
+            <div class="logo-area" onclick="navegar('BarberBotPro')" style="cursor:pointer">
+                <i class="fas fa-scissors"></i> <span>BARBERBOT <b>PRO</b></span>
+            </div>
+            <button class="btn-outline" style="width:auto" onclick="navegar('BarberBotPro')">Voltar</button>
+        </header>
         <div class="container wide">
             <h2>Configurações</h2>
             <div class="tabs-container">
-                <button class="tab-btn ${aba === 'gerais' ? 'active' : ''}" onclick="navegar('Configuracoes', 'gerais')">Gerais</button>
-                <button class="tab-btn ${aba === 'usuarios' ? 'active' : ''}" onclick="navegar('Configuracoes', 'usuarios')">Usuários</button>
+                <button class="tab-btn ${aba === 'gerais' ? 'active' : ''}" onclick="renderConfiguracoes('gerais', 'gerais')">Gerais</button>
+                <button class="tab-btn ${aba === 'usuarios' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'cadastros')">Usuários</button>
+                <button class="tab-btn ${aba === 'backup' ? 'active' : ''}" onclick="renderConfiguracoes('backup')">Backup</button>
             </div>
-            <div id="cfg_content">
+            
+            <div id="configContent">
                 ${aba === 'gerais' ? `
                     <div class="sub-tabs"><button class="sub-tab-btn active">Gerais</button></div>
-                    <div style="background:#222; padding:25px; border-radius:8px; border:1px solid var(--border)">
+                    <div style="background:#222; padding:20px; border-radius:8px; border:1px solid var(--border)">
                         <h3 style="margin-top:0; font-size:1rem; color:var(--primary)">Preferências</h3>
-                        <div style="display:flex; align-items:center; gap:12px">
-                            <input type="checkbox" id="c_ordem" ${getData(CFG_KEY).controlaOrdem ? 'checked' : ''} onchange="setData(CFG_KEY, {controlaOrdem: this.checked})" style="width:18px; height:18px; cursor:pointer">
-                            <label for="c_ordem" style="text-transform:none; margin:0; cursor:pointer; font-size:0.9rem">Controla ordem de chegada</label>
-                            <i class="fas fa-info-circle info-icon" title="Habilita módulo de fila"></i>
+                        <div style="display:flex; align-items:center;">
+                            <input type="checkbox" id="checkOrdem" style="width:18px; height:18px; accent-color:var(--primary)" 
+                                ${getConfig().controlaOrdem ? 'checked' : ''} onchange="saveConfig({controlaOrdem: this.checked})">
+                            <label for="checkOrdem" style="display:inline; text-transform:none; margin:0 0 0 10px; cursor:pointer">Controla ordem de chegada</label>
+                            <i class="fas fa-info-circle info-icon" title="Quando marcada, habilitará o controle por ordem de chegada."></i>
                         </div>
                     </div>
                 ` : ''}
+
                 ${aba === 'usuarios' ? `
                     <div class="sub-tabs">
                         <button class="sub-tab-btn ${sub === 'cadastros' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'cadastros')">Cadastros</button>
-                        ${usuarioLogado.tipo === 'Administrador' ? `<button class="sub-tab-btn ${sub === 'perfis' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'perfis')">Perfis</button>` : ''}
+                        ${isAdmin ? `<button class="sub-tab-btn ${sub === 'perfis' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'perfis')">Perfis</button>` : ''}
                     </div>
-                    ${sub === 'cadastros' ? renderTabelaUsers() : renderPerfis()}
+                    ${sub === 'cadastros' ? renderTabelaUsuarios() : renderModuloPerfis()}
                 ` : ''}
             </div>
         </div>
     `;
-    if(aba === 'usuarios' && sub === 'cadastros') atualizarTabelaUsers(getData(DB_KEY));
+    if(aba === 'usuarios' && sub === 'cadastros') atualizarTabela(getUsuarios());
 }
 
-function renderTabelaUsers() {
+function renderTabelaUsuarios() {
     return `
-        <div style="display:flex; gap:10px; margin-bottom:15px">
-            <button id="u_edit" class="btn-outline" disabled onclick="editarUser()">Editar</button>
-            <button id="u_status" class="btn-outline" disabled onclick="toggleStatusUser()">Ativar/Desativar</button>
-            ${usuarioLogado.tipo === 'Administrador' ? `<button class="btn-primary" onclick="navegar('AdicionaUsuario')" style="margin-left:auto">+ NOVO</button>` : ''}
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px">
+            <div style="display:flex; gap:10px">
+                <button id="btnEdit" class="btn-outline" disabled onclick="tentarEditar()">Editar</button>
+                <button id="btnStatus" class="btn-outline" disabled onclick="toggleStatusUser()">Ativar/Desativar</button>
+                <button id="btnDelete" class="btn-outline" style="color:var(--danger)" disabled onclick="excluirUser()">Excluir</button>
+            </div>
+            ${usuarioLogado.tipo === 'Administrador' ? `<button class="btn-primary" onclick="navegar('AdicionaUsuario')">+ Novo Usuário</button>` : ''}
         </div>
         <table>
-            <thead><tr><th>Nome</th><th>Usuário</th><th>Tipo</th><th>Status</th></tr></thead>
-            <tbody id="u_lista"></tbody>
+            <colgroup><col style="width:30%"><col style="width:25%"><col style="width:20%"><col style="width:15%"><col style="width:10%"></colgroup>
+            <thead><tr><th>NOME COMPLETO</th><th>E-MAIL</th><th>USUÁRIO</th><th>TIPO</th><th>STATUS</th></tr></thead>
+            <tbody id="listaCorpo"></tbody>
         </table>
     `;
 }
 
-function atualizarTabelaUsers(lista) {
-    const tbody = document.getElementById('u_lista');
-    if(!tbody) return;
-    tbody.innerHTML = lista.map(u => `
-        <tr onclick="selecionarUser(${u.id}, this)" style="cursor:pointer">
-            <td>${u.nomeCompleto}</td><td>@${u.usuario}</td><td>${u.tipo}</td>
+function atualizarTabela(lista) {
+    const corpo = document.getElementById('listaCorpo');
+    if(!corpo) return;
+    corpo.innerHTML = lista.map(u => `
+        <tr onclick="selecionarUser(${u.id}, this)" style="cursor:pointer" id="row_${u.id}">
+            <td>${u.nomeCompleto}</td><td>${u.email}</td><td>@${u.usuario}</td><td>${u.tipo}</td>
             <td style="color:${u.ativo ? 'var(--success)' : 'var(--danger)'}">${u.ativo ? 'Ativo' : 'Inativo'}</td>
         </tr>
     `).join('');
+    if(usuarioSelecionado) {
+        const row = document.getElementById(`row_${usuarioSelecionado.id}`);
+        if(row) row.classList.add('selected');
+    }
 }
 
 function selecionarUser(id, el) {
     document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
     el.classList.add('selected');
-    itemSelecionado = getData(DB_KEY).find(u => u.id === id);
-    document.getElementById('u_edit').disabled = false;
-    if(usuarioLogado.tipo === 'Administrador') document.getElementById('u_status').disabled = false;
+    usuarioSelecionado = getUsuarios().find(u => u.id == id);
+    document.getElementById('btnEdit').disabled = false;
+    
+    if(usuarioLogado.tipo === 'Administrador') {
+        document.getElementById('btnStatus').disabled = false;
+        document.getElementById('btnDelete').disabled = usuarioSelecionado.ativo;
+    }
 }
 
 function toggleStatusUser() {
-    const list = getData(DB_KEY).map(u => { if(u.id === itemSelecionado.id) u.ativo = !u.ativo; return u; });
-    setData(DB_KEY, list); renderConfiguracoes('usuarios', 'cadastros');
+    if(!usuarioSelecionado) return;
+    const lista = getUsuarios().map(u => {
+        if(u.id === usuarioSelecionado.id) {
+            u.ativo = !u.ativo;
+            usuarioSelecionado = {...u};
+        }
+        return u;
+    });
+    saveUsuarios(lista);
+    atualizarTabela(lista);
+    document.getElementById('btnDelete').disabled = usuarioSelecionado.ativo;
 }
 
-function editarUser() {
-    if(usuarioLogado.tipo === 'Normal' && itemSelecionado.tipo === 'Administrador') return alert("Ação negada.");
-    navegar('AdicionaUsuario', itemSelecionado.id);
+function tentarEditar() {
+    if(usuarioLogado.tipo === 'Normal' && usuarioSelecionado.tipo === 'Administrador') {
+        alert("Erro hierárquico: Um usuário Normal não pode alterar dados de um Administrador.");
+        return;
+    }
+    navegar('AdicionaUsuario', usuarioSelecionado.id);
 }
 
-function renderFormUsuario(id = null) {
-    const user = id ? getData(DB_KEY).find(u => u.id == id) : null;
-    const isFirst = !usuarioLogado;
+function renderModuloPerfis() {
+    const usuarios = getUsuarios();
+    return `
+        <div class="perfis-grid" style="display:grid; grid-template-columns: 320px 1fr; gap:30px;">
+            <div style="border-right:1px solid var(--border); padding-right:20px">
+                <h4 style="margin-top:0">Selecione o Usuário</h4>
+                <div style="display:flex; flex-direction:column; gap:8px">
+                    ${usuarios.map(u => `
+                        <button class="btn-outline" style="text-align:left; padding:12px; font-size:0.8rem; border-color:${usuarioSelecionado?.id === u.id ? 'var(--primary)' : 'var(--border)'}" onclick="carregarPerfilUser(${u.id})">
+                            ${u.nomeCompleto} <br>
+                            <small style="color:${u.tipo === 'Administrador' ? 'var(--primary)' : 'var(--text-dim)'}; text-transform:uppercase; font-size:0.65rem; font-weight:700">
+                                ${u.tipo} • @${u.usuario}
+                            </small>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+            <div id="permEditor"><p style="color:var(--text-dim); text-align:center; padding-top:50px">Escolha um usuário para gerenciar acessos.</p></div>
+        </div>
+    `;
+}
+
+function carregarPerfilUser(id) {
+    const user = getUsuarios().find(u => u.id == id);
+    usuarioSelecionado = user;
+    const perms = user.permissoes || [];
+    
+    // Refresh visual dos botões de seleção
+    document.querySelectorAll('.perfis-grid .btn-outline').forEach(btn => {
+        btn.style.borderColor = 'var(--border)';
+    });
+
+    document.getElementById('permEditor').innerHTML = `
+        <div style="background:#222; padding:25px; border-radius:12px; border:1px solid var(--border);">
+            <h3 style="margin-top:0; color:var(--primary); font-size:1.1rem">Acessos: ${user.nomeCompleto}</h3>
+            <form onsubmit="salvarPerfil(event, ${user.id})">
+                <div style="display:flex; flex-direction:column; gap:12px; margin:20px 0;">
+                    ${BOTOES_MENU.map(btn => `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" id="p_${btn.id}" value="${btn.id}" ${perms.includes(btn.id) ? 'checked' : ''} style="width:18px; height:18px; accent-color:var(--primary);">
+                            <label for="p_${btn.id}" style="text-transform:none; font-size:0.9rem; color:var(--text); margin:0; cursor:pointer">${btn.label}</label>
+                        </div>
+                    `).join('')}
+                </div>
+                <button type="submit" class="btn-primary" style="padding:10px 30px;">GRAVAR ACESSOS</button>
+            </form>
+        </div>
+    `;
+}
+
+function salvarPerfil(e, userId) {
+    e.preventDefault();
+    const selecionados = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
+    const list = getUsuarios().map(u => u.id === userId ? {...u, permissoes: selecionados} : u);
+    saveUsuarios(list);
+    alert("Permissões atualizadas!");
+    renderConfiguracoes('usuarios', 'perfis');
+}
+
+function renderAdicionaUsuario(id = null) {
+    const userEdit = id ? getUsuarios().find(u => u.id == id) : null;
+    const isEditing = !!userEdit;
+    const isRecoveryMode = !usuarioLogado;
     app.innerHTML = `
         <div class="view-centered">
             <div class="container" style="max-width:550px">
-                <h2>${user ? 'EDITAR' : 'NOVO'} USUÁRIO</h2>
+                <h2>${isEditing ? 'EDITAR' : 'NOVO'} USUÁRIO</h2>
                 <form onsubmit="salvarUser(event)">
-                    <input type="hidden" id="fu_id" value="${user?.id || ''}">
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-                        <div class="form-group"><label>Nome</label><input type="text" id="fu_nome" value="${user?.nomeCompleto || ''}" required></div>
-                        <div class="form-group"><label>Email</label><input type="email" id="fu_email" value="${user?.email || ''}" required></div>
-                        <div class="form-group"><label>Usuário</label><input type="text" id="fu_user" value="${user?.usuario || ''}" required></div>
+                    <input type="hidden" id="userId" value="${isEditing ? userEdit.id : ''}">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px">
+                        <div class="form-group"><label>Nome Completo</label><input type="text" id="nome" value="${userEdit?.nomeCompleto || ''}" required></div>
+                        <div class="form-group"><label>E-mail</label><input type="email" id="email" value="${userEdit?.email || ''}" required></div>
+                        <div class="form-group"><label>Usuário</label><input type="text" id="user" value="${userEdit?.usuario || ''}" required></div>
                         <div class="form-group">
                             <label>Tipo</label>
-                            <select id="fu_tipo" ${isFirst || (user && usuarioLogado.tipo === 'Normal') ? 'disabled' : ''}>
-                                <option value="Normal" ${user?.tipo === 'Normal' ? 'selected' : ''}>Normal</option>
-                                <option value="Administrador" ${user?.tipo === 'Administrador' ? 'selected' : ''}>Administrador</option>
+                            <select id="tipo" ${isRecoveryMode || (isEditing && usuarioLogado.tipo === 'Normal') ? 'disabled' : ''}>
+                                <option value="Normal" ${userEdit?.tipo === 'Normal' ? 'selected' : ''}>Normal</option>
+                                <option value="Administrador" ${userEdit?.tipo === 'Administrador' ? 'selected' : ''}>Administrador</option>
                             </select>
                         </div>
-                        <div class="form-group"><label>Senha</label><input type="password" id="fu_pass" required></div>
-                        <div class="form-group"><label>Confirmar</label><input type="password" id="fu_passc" required></div>
+                        <div class="form-group"><label>Senha</label><input type="password" id="pass" required></div>
+                        <div class="form-group"><label>Confirmação</label><input type="password" id="passC" required></div>
                     </div>
                     <button type="submit" class="btn-primary" style="width:100%; margin-top:10px">GRAVAR</button>
-                    <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="${isFirst ? "navegar('Login')" : "navegar('Configuracoes', 'usuarios')" }">CANCELAR</button>
+                    <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="${usuarioLogado ? "navegar('Configuracoes', 'usuarios', 'cadastros')" : "navegar('Login')" }">CANCELAR</button>
                 </form>
             </div>
         </div>
@@ -335,49 +321,31 @@ function renderFormUsuario(id = null) {
 
 function salvarUser(e) {
     e.preventDefault();
-    if(document.getElementById('fu_pass').value !== document.getElementById('fu_passc').value) return alert("Senhas não conferem");
-    const id = document.getElementById('fu_id').value;
-    const list = getData(DB_KEY);
+    if(document.getElementById('pass').value !== document.getElementById('passC').value) return alert("Senhas não conferem!");
+    const id = document.getElementById('userId').value;
+    const list = getUsuarios();
     const dados = {
         id: id ? parseInt(id) : Date.now(),
-        nomeCompleto: document.getElementById('fu_nome').value,
-        email: document.getElementById('fu_email').value,
-        usuario: document.getElementById('fu_user').value,
-        tipo: document.getElementById('fu_tipo').value,
-        senha: document.getElementById('fu_pass').value,
-        permissoes: id ? list.find(u => u.id == id).permissoes : (document.getElementById('fu_tipo').value === 'Administrador' ? BOTOES_MENU.map(b => b.id) : []),
+        nomeCompleto: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        usuario: document.getElementById('user').value,
+        tipo: document.getElementById('tipo').value,
+        senha: document.getElementById('pass').value,
+        permissoes: id ? list.find(u => u.id == id).permissoes : (document.getElementById('tipo').value === 'Administrador' ? BOTOES_MENU.map(b => b.id) : []),
         ativo: id ? list.find(u => u.id == id).ativo : true
     };
-    setData(DB_KEY, id ? list.map(u => u.id == id ? dados : u) : [...list, dados]);
-    usuarioLogado ? navegar('Configuracoes', 'usuarios') : navegar('Login');
+    saveUsuarios(id ? list.map(u => u.id == id ? dados : u) : [...list, dados]);
+    alert("Dados salvos!");
+    usuarioLogado ? navegar('Configuracoes', 'usuarios', 'cadastros') : navegar('Login');
 }
 
-function renderPerfis() {
-    const users = getData(DB_KEY);
-    return `
-        <div style="display:grid; grid-template-columns: 300px 1fr; gap:30px">
-            <div>
-                ${users.map(u => `<button class="btn-outline" style="width:100%; text-align:left; margin-bottom:8px" onclick="carregarPerfil(${u.id})">${u.nomeCompleto}</button>`).join('')}
-            </div>
-            <div id="perfil_editor" style="background:#222; padding:20px; border-radius:8px">Selecione um usuário.</div>
-        </div>
-    `;
-}
-
-function carregarPerfil(id) {
-    const u = getData(DB_KEY).find(x => x.id === id);
-    const perms = u.permissoes || [];
-    document.getElementById('perfil_editor').innerHTML = `
-        <h3>${u.nomeCompleto}</h3>
-        ${BOTOES_MENU.map(b => `<label style="display:flex; gap:10px; text-transform:none"><input type="checkbox" value="${b.id}" ${perms.includes(b.id) ? 'checked' : ''}> ${b.label}</label>`).join('')}
-        <button class="btn-primary" style="margin-top:15px" onclick="salvarPerms(${id})">Gravar</button>
-    `;
-}
-
-function salvarPerms(id) {
-    const checks = Array.from(document.querySelectorAll('#perfil_editor input:checked')).map(i => i.value);
-    const list = getData(DB_KEY).map(u => u.id === id ? {...u, permissoes: checks} : u);
-    setData(DB_KEY, list); alert("Ok!"); renderConfiguracoes('usuarios', 'perfis');
+function excluirUser() {
+    if(!usuarioSelecionado || usuarioSelecionado.usuario === 'admin') return;
+    if(confirm('Excluir definitivamente?')) {
+        saveUsuarios(getUsuarios().filter(u => u.id != usuarioSelecionado.id));
+        usuarioSelecionado = null;
+        renderConfiguracoes('usuarios', 'cadastros');
+    }
 }
 
 navegar('Login');
