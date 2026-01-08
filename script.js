@@ -1,5 +1,5 @@
 /**
- * BARBERBOT PRO - V 3.4 (CÓDIGO INTEGRAL ATUALIZADO)
+ * BARBERBOT PRO - V 3.2
  */
 
 const DB_KEY = 'barberbot_usuarios';
@@ -22,7 +22,7 @@ const BOTOES_MENU = [
 const getData = (key) => JSON.parse(localStorage.getItem(key)) || [];
 const setData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
-// --- INIT ---
+// --- ADMIN MESTRE ---
 const init = () => {
     let users = getData(DB_KEY);
     if (!users.some(u => u.usuario === 'admin')) {
@@ -123,7 +123,7 @@ function renderTelaProduto() {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px">
                 <h2>Produtos</h2>
                 <div style="display:flex; gap:10px">
-                    <input type="text" id="p_filter" placeholder="Buscar por nome, categoria ou marca..." oninput="filtrarProds()" style="width:300px">
+                    <input type="text" id="p_filter" placeholder="Buscar..." oninput="filtrarProds()" style="width:200px">
                     <button class="btn-primary" onclick="navegar('NovoProduto')">NOVO</button>
                 </div>
             </div>
@@ -132,7 +132,7 @@ function renderTelaProduto() {
                 <button id="p_status" class="btn-outline" disabled onclick="toggleStatusProd()">Ativar/Desativar</button>
             </div>
             <table>
-                <thead><tr><th>Descrição</th><th>Categoria</th><th>Marca</th><th>Qtd</th><th>Venda</th><th>Status</th></tr></thead>
+                <thead><tr><th>Descrição</th><th>Qtd</th><th>Compra</th><th>Markup</th><th>Venda</th><th>Status</th></tr></thead>
                 <tbody id="p_lista"></tbody>
             </table>
         </div>
@@ -145,24 +145,11 @@ function atualizarTabelaProd(lista) {
     if(!tbody) return;
     tbody.innerHTML = lista.map(p => `
         <tr onclick="selecionarProd(${p.id}, this)" style="cursor:pointer">
-            <td>${p.descricao}</td>
-            <td style="color:var(--text-dim)">${p.categoria || '-'}</td>
-            <td style="color:var(--text-dim)">${p.marca || '-'}</td>
-            <td>${p.quantidade}</td>
-            <td style="color:var(--primary); font-weight:700">R$ ${parseFloat(p.valorVenda).toFixed(2)}</td>
+            <td>${p.descricao}</td><td>${p.quantidade}</td><td>R$ ${parseFloat(p.valorCompra).toFixed(2)}</td>
+            <td>${p.markup}%</td><td style="color:var(--primary); font-weight:700">R$ ${parseFloat(p.valorVenda).toFixed(2)}</td>
             <td><span class="status-tag ${p.ativo ? 'active-tag' : 'inactive-tag'}">${p.ativo ? 'Ativo' : 'Inativo'}</span></td>
         </tr>
     `).join('');
-}
-
-function filtrarProds() {
-    const val = document.getElementById('p_filter').value.toLowerCase();
-    const filtrados = getData(PROD_KEY).filter(p => 
-        p.descricao.toLowerCase().includes(val) || 
-        (p.categoria && p.categoria.toLowerCase().includes(val)) || 
-        (p.marca && p.marca.toLowerCase().includes(val))
-    );
-    atualizarTabelaProd(filtrados);
 }
 
 function selecionarProd(id, el) {
@@ -171,6 +158,11 @@ function selecionarProd(id, el) {
     itemSelecionado = getData(PROD_KEY).find(p => p.id === id);
     document.getElementById('p_edit').disabled = !itemSelecionado.ativo;
     document.getElementById('p_status').disabled = false;
+}
+
+function filtrarProds() {
+    const val = document.getElementById('p_filter').value.toLowerCase();
+    atualizarTabelaProd(getData(PROD_KEY).filter(p => p.descricao.toLowerCase().includes(val)));
 }
 
 function toggleStatusProd() {
@@ -185,63 +177,22 @@ function renderFormProduto(id = null) {
     app.innerHTML = `
         ${renderHeader()}
         <div class="view-centered">
-            <div class="container" style="max-width:600px">
+            <div class="container" style="max-width:550px">
                 <h3>${prod ? 'EDITAR' : 'NOVO'} PRODUTO</h3>
                 <form onsubmit="gravarProduto(event)">
                     <input type="hidden" id="fp_id" value="${prod?.id || ''}">
-                    
-                    <div class="form-group">
-                        <label>Descrição</label>
-                        <input type="text" id="fp_desc" value="${prod?.descricao || ''}" required>
-                    </div>
-
+                    <div class="form-group"><label>Descrição</label><input type="text" id="fp_desc" value="${prod?.descricao || ''}" required></div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-                        <div class="form-group">
-                            <label>Quantidade</label>
-                            <input type="number" id="fp_qtd" value="${prod?.quantidade || 0}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Valor Compra (R$)</label>
-                            <input type="number" step="0.01" id="fp_vcompra" value="${prod?.valorCompra || ''}" required oninput="calcVenda()">
-                        </div>
+                        <div class="form-group"><label>Quantidade</label><input type="number" id="fp_qtd" value="${prod?.quantidade || 0}" required></div>
+                        <div class="form-group"><label>Valor Compra</label><input type="number" step="0.01" id="fp_vcompra" value="${prod?.valorCompra || ''}" required oninput="calcVenda()"><small class="hint-text">Custo+Frete+Impostos</small></div>
+                        <div class="form-group"><label>Markup (%)</label><input type="number" id="fp_markup" value="${prod?.markup || 0}" required oninput="calcVenda()"></div>
+                        <div class="form-group"><label>Valor Venda</label><input type="number" step="0.01" id="fp_vvenda" value="${prod?.valorVenda || ''}" required></div>
                     </div>
-
-                    <div class="form-group">
-                        <label>Categoria</label>
-                        <select id="fp_cat">
-                            <option value="Cabelo" ${prod?.categoria === 'Cabelo' ? 'selected' : ''}>Cabelo</option>
-                            <option value="Barba" ${prod?.categoria === 'Barba' ? 'selected' : ''}>Barba</option>
-                            <option value="Outros" ${prod?.categoria === 'Outros' ? 'selected' : ''}>Outros</option>
-                        </select>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-                        <div class="form-group">
-                            <label>Markup (%)</label>
-                            <input type="number" id="fp_markup" value="${prod?.markup || 0}" required oninput="calcVenda()">
-                        </div>
-                        <div class="form-group">
-                            <label>Valor Venda (R$)</label>
-                            <input type="number" step="0.01" id="fp_vvenda" value="${prod?.valorVenda || ''}" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Marca / Fornecedor</label>
-                        <input type="text" id="fp_marca" value="${prod?.marca || ''}">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Observações</label>
-                        <textarea id="fp_obs">${prod?.obs || ''}</textarea>
-                    </div>
-
-                    <div style="display:flex; gap:20px; margin-bottom:20px">
+                    <div style="display:flex; gap:20px; margin:15px 0">
                         <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_disp" ${prod?.disponivel !== false ? 'checked' : ''} style="width:16px"> Disponível</label>
                         <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_ativo" ${prod?.ativo !== false ? 'checked' : ''} style="width:16px"> Ativo</label>
                     </div>
-
-                    <button type="submit" class="btn-primary" style="width:100%">GRAVAR PRODUTO</button>
+                    <button type="submit" class="btn-primary" style="width:100%">GRAVAR</button>
                     <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="navegar('Produto')">CANCELAR</button>
                 </form>
             </div>
@@ -264,11 +215,8 @@ function gravarProduto(e) {
         descricao: document.getElementById('fp_desc').value,
         quantidade: document.getElementById('fp_qtd').value,
         valorCompra: document.getElementById('fp_vcompra').value,
-        categoria: document.getElementById('fp_cat').value,
         markup: document.getElementById('fp_markup').value,
         valorVenda: document.getElementById('fp_vvenda').value,
-        marca: document.getElementById('fp_marca').value,
-        obs: document.getElementById('fp_obs').value,
         disponivel: document.getElementById('fp_disp').checked,
         ativo: document.getElementById('fp_ativo').checked
     };
@@ -408,8 +356,8 @@ function renderPerfis() {
     const users = getData(DB_KEY);
     return `
         <div style="display:grid; grid-template-columns: 300px 1fr; gap:30px">
-            <div style="display:flex; flex-direction:column; gap:8px">
-                ${users.map(u => `<button class="btn-outline" style="width:100%; text-align:left; justify-content:flex-start" onclick="carregarPerfil(${u.id})">${u.nomeCompleto}</button>`).join('')}
+            <div>
+                ${users.map(u => `<button class="btn-outline" style="width:100%; text-align:left; margin-bottom:8px" onclick="carregarPerfil(${u.id})">${u.nomeCompleto}</button>`).join('')}
             </div>
             <div id="perfil_editor" style="background:#222; padding:20px; border-radius:8px">Selecione um usuário.</div>
         </div>
@@ -420,22 +368,16 @@ function carregarPerfil(id) {
     const u = getData(DB_KEY).find(x => x.id === id);
     const perms = u.permissoes || [];
     document.getElementById('perfil_editor').innerHTML = `
-        <h3 style="margin-top:0">${u.nomeCompleto}</h3>
-        <div style="display:flex; flex-direction:column; gap:12px; margin-top:15px">
-            ${BOTOES_MENU.map(b => `
-                <label style="display:flex; align-items:center; gap:10px; text-transform:none">
-                    <input type="checkbox" value="${b.id}" ${perms.includes(b.id) ? 'checked' : ''} style="width:18px; height:18px"> ${b.label}
-                </label>
-            `).join('')}
-        </div>
-        <button class="btn-primary" style="margin-top:20px; width:100%" onclick="salvarPerms(${id})">Gravar Acessos</button>
+        <h3>${u.nomeCompleto}</h3>
+        ${BOTOES_MENU.map(b => `<label style="display:flex; gap:10px; text-transform:none"><input type="checkbox" value="${b.id}" ${perms.includes(b.id) ? 'checked' : ''}> ${b.label}</label>`).join('')}
+        <button class="btn-primary" style="margin-top:15px" onclick="salvarPerms(${id})">Gravar</button>
     `;
 }
 
 function salvarPerms(id) {
     const checks = Array.from(document.querySelectorAll('#perfil_editor input:checked')).map(i => i.value);
     const list = getData(DB_KEY).map(u => u.id === id ? {...u, permissoes: checks} : u);
-    setData(DB_KEY, list); alert("Permissões Atualizadas!"); renderConfiguracoes('usuarios', 'perfis');
+    setData(DB_KEY, list); alert("Ok!"); renderConfiguracoes('usuarios', 'perfis');
 }
 
 navegar('Login');
