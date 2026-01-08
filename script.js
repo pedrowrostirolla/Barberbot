@@ -1,5 +1,5 @@
 /**
- * BARBERBOT PRO - V 3.5 (INTEGRAL E ATUALIZADO)
+ * BARBERBOT PRO - V 3.4 (CÓDIGO INTEGRAL ATUALIZADO)
  */
 
 const DB_KEY = 'barberbot_usuarios';
@@ -23,7 +23,7 @@ const getData = (key) => JSON.parse(localStorage.getItem(key)) || [];
 const setData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
 // --- INIT ---
-const initSys = () => {
+const init = () => {
     let users = getData(DB_KEY);
     if (!users.some(u => u.usuario === 'admin')) {
         users.push({
@@ -34,17 +34,17 @@ const initSys = () => {
         setData(DB_KEY, users);
     }
 };
-initSys();
+init();
 
 // --- NAVEGAÇÃO ---
 function navegar(tela, params = null) {
     itemSelecionado = null;
     if (tela === 'Login') renderLogin();
-    else if (tela === 'BarberBotPro') renderDashboard();
-    else if (tela === 'Configuracoes') renderConfiguracoes(params || 'gerais');
-    else if (tela === 'AdicionaUsuario') renderFormUsuario(params);
-    else if (tela === 'Produto') renderTelaProduto();
-    else if (tela === 'NovoProduto') renderFormProduto(params);
+    if (tela === 'BarberBotPro') renderDashboard();
+    if (tela === 'Configuracoes') renderConfiguracoes(params || 'gerais');
+    if (tela === 'AdicionaUsuario') renderFormUsuario(params);
+    if (tela === 'Produto') renderTelaProduto();
+    if (tela === 'NovoProduto') renderFormProduto(params);
 }
 
 function renderHeader() {
@@ -59,9 +59,7 @@ function renderHeader() {
                     <div style="font-size:0.8rem; font-weight:600">${usuarioLogado.nomeCompleto.split(' ')[0]}</div>
                     <div style="font-size:0.6rem; color:var(--primary); text-transform:uppercase">${usuarioLogado.tipo}</div>
                 </div>
-                <button onclick="navegar('Login')" style="background:none; color:var(--danger); border:none; font-size:1.2rem; cursor:pointer">
-                    <i class="fas fa-power-off"></i>
-                </button>
+                <button onclick="navegar('Login')" style="background:none; color:var(--danger); border:none; font-size:1.2rem"><i class="fas fa-power-off"></i></button>
             </div>
         </header>
     `;
@@ -71,7 +69,7 @@ function renderHeader() {
 function renderLogin() {
     usuarioLogado = null;
     app.innerHTML = `
-        <div class="view-centered" style="min-height:100vh">
+        <div class="view-centered">
             <div class="container">
                 <div style="text-align:center; margin-bottom:2rem; color:var(--primary)">
                     <i class="fas fa-scissors fa-3x"></i>
@@ -98,56 +96,45 @@ function login() {
     else { document.getElementById('loginErr').style.display = 'block'; }
 }
 
-// --- DASHBOARD ---
 function renderDashboard() {
     const perms = usuarioLogado.permissoes || [];
     const cfg = getData(CFG_KEY);
     app.innerHTML = `
         ${renderHeader()}
-        <div class="content-wrapper">
-            <nav class="nav-menu">
-                ${BOTOES_MENU.map(item => {
-                    if (item.id === 'ordem' && !cfg.controlaOrdem) return '';
-                    if (!perms.includes(item.id)) return '';
-                    return `<button class="nav-btn" onclick="navegar('${item.tela}')">${item.label}</button>`;
-                }).join('')}
-            </nav>
-            <main style="padding:5rem 2rem; text-align:center">
-                <h1 style="font-weight:300; font-size:2.5rem">Painel de <b style="color:var(--primary)">Gestão</b></h1>
-                <p style="color:var(--text-dim)">Selecione um módulo acima para começar.</p>
-            </main>
-        </div>
+        <nav class="nav-menu" style="background:#151515; border-bottom:1px solid var(--border); padding:0 2rem; justify-content:center">
+            ${BOTOES_MENU.map(item => {
+                if (item.id === 'ordem' && !cfg.controlaOrdem) return '';
+                if (!perms.includes(item.id)) return '';
+                return `<button class="nav-btn" onclick="navegar('${item.tela}')">${item.label}</button>`;
+            }).join('')}
+        </nav>
+        <main style="padding:5rem 2rem; text-align:center">
+            <h1 style="font-weight:300; font-size:2.5rem">Painel de <b style="color:var(--primary)">Gestão</b></h1>
+            <p style="color:var(--text-dim)">Selecione um módulo acima para começar.</p>
+        </main>
     `;
 }
 
-// --- MÓDULO PRODUTOS ---
+// --- PRODUTOS ---
 function renderTelaProduto() {
-    const perms = usuarioLogado.permissoes || [];
     app.innerHTML = `
         ${renderHeader()}
-        <div class="content-wrapper">
-            <nav class="nav-menu">
-                ${BOTOES_MENU.filter(item => perms.includes(item.id)).map(item => `
-                    <button class="nav-btn ${item.id === 'produto' ? 'active' : ''}" onclick="navegar('${item.tela}')">${item.label}</button>
-                `).join('')}
-            </nav>
-            <div class="container wide">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px">
-                    <h2>Produtos</h2>
-                    <div style="display:flex; gap:10px">
-                        <input type="text" id="p_filter" placeholder="Buscar por nome, categoria ou marca..." oninput="filtrarProds()" style="width:300px">
-                        <button class="btn-primary" onclick="navegar('NovoProduto')">NOVO</button>
-                    </div>
+        <div class="container wide">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px">
+                <h2>Produtos</h2>
+                <div style="display:flex; gap:10px">
+                    <input type="text" id="p_filter" placeholder="Buscar por nome, categoria ou marca..." oninput="filtrarProds()" style="width:300px">
+                    <button class="btn-primary" onclick="navegar('NovoProduto')">NOVO</button>
                 </div>
-                <div style="margin-bottom:15px; display:flex; gap:10px">
-                    <button id="p_edit" class="btn-outline" disabled onclick="editarProd()">Editar</button>
-                    <button id="p_status" class="btn-outline" disabled onclick="toggleStatusProd()">Ativar/Desativar</button>
-                </div>
-                <table>
-                    <thead><tr><th>Descrição</th><th>Categoria</th><th>Marca</th><th>Qtd</th><th>Venda</th><th>Status</th></tr></thead>
-                    <tbody id="p_lista"></tbody>
-                </table>
             </div>
+            <div style="margin-bottom:15px; display:flex; gap:10px">
+                <button id="p_edit" class="btn-outline" disabled onclick="editarProd()">Editar</button>
+                <button id="p_status" class="btn-outline" disabled onclick="toggleStatusProd()">Ativar/Desativar</button>
+            </div>
+            <table>
+                <thead><tr><th>Descrição</th><th>Categoria</th><th>Marca</th><th>Qtd</th><th>Venda</th><th>Status</th></tr></thead>
+                <tbody id="p_lista"></tbody>
+            </table>
         </div>
     `;
     atualizarTabelaProd(getData(PROD_KEY));
@@ -197,69 +184,66 @@ function renderFormProduto(id = null) {
     const prod = id ? getData(PROD_KEY).find(p => p.id == id) : null;
     app.innerHTML = `
         ${renderHeader()}
-        <div class="content-wrapper">
-            <div class="view-centered">
-                <div class="container" style="max-width:600px">
-                    <h3>${prod ? 'EDITAR' : 'NOVO'} PRODUTO</h3>
-                    <form onsubmit="gravarProduto(event)">
-                        <input type="hidden" id="fp_id" value="${prod?.id || ''}">
-                        
+        <div class="view-centered">
+            <div class="container" style="max-width:600px">
+                <h3>${prod ? 'EDITAR' : 'NOVO'} PRODUTO</h3>
+                <form onsubmit="gravarProduto(event)">
+                    <input type="hidden" id="fp_id" value="${prod?.id || ''}">
+                    
+                    <div class="form-group">
+                        <label>Descrição</label>
+                        <input type="text" id="fp_desc" value="${prod?.descricao || ''}" required>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
                         <div class="form-group">
-                            <label>Descrição</label>
-                            <input type="text" id="fp_desc" value="${prod?.descricao || ''}" required>
+                            <label>Quantidade</label>
+                            <input type="number" id="fp_qtd" value="${prod?.quantidade || 0}" required>
                         </div>
-
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-                            <div class="form-group">
-                                <label>Quantidade</label>
-                                <input type="number" id="fp_qtd" value="${prod?.quantidade || 0}" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Valor Compra (R$)</label>
-                                <input type="number" step="0.01" id="fp_vcompra" value="${prod?.valorCompra || ''}" required oninput="calcVenda()">
-                                <small class="hint-text">Custo+Frete+Impostos</small>
-                            </div>
-                        </div>
-
                         <div class="form-group">
-                            <label>Categoria</label>
-                            <select id="fp_cat">
-                                <option value="Cabelo" ${prod?.categoria === 'Cabelo' ? 'selected' : ''}>Cabelo</option>
-                                <option value="Barba" ${prod?.categoria === 'Barba' ? 'selected' : ''}>Barba</option>
-                                <option value="Outros" ${prod?.categoria === 'Outros' ? 'selected' : ''}>Outros</option>
-                            </select>
+                            <label>Valor Compra (R$)</label>
+                            <input type="number" step="0.01" id="fp_vcompra" value="${prod?.valorCompra || ''}" required oninput="calcVenda()">
                         </div>
+                    </div>
 
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-                            <div class="form-group">
-                                <label>Markup (%)</label>
-                                <input type="number" id="fp_markup" value="${prod?.markup || 0}" required oninput="calcVenda()">
-                            </div>
-                            <div class="form-group">
-                                <label>Valor Venda (R$)</label>
-                                <input type="number" step="0.01" id="fp_vvenda" value="${prod?.valorVenda || ''}" required>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select id="fp_cat">
+                            <option value="Cabelo" ${prod?.categoria === 'Cabelo' ? 'selected' : ''}>Cabelo</option>
+                            <option value="Barba" ${prod?.categoria === 'Barba' ? 'selected' : ''}>Barba</option>
+                            <option value="Outros" ${prod?.categoria === 'Outros' ? 'selected' : ''}>Outros</option>
+                        </select>
+                    </div>
 
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
                         <div class="form-group">
-                            <label>Marca / Fornecedor</label>
-                            <input type="text" id="fp_marca" value="${prod?.marca || ''}">
+                            <label>Markup (%)</label>
+                            <input type="number" id="fp_markup" value="${prod?.markup || 0}" required oninput="calcVenda()">
                         </div>
-
                         <div class="form-group">
-                            <label>Observações</label>
-                            <textarea id="fp_obs">${prod?.obs || ''}</textarea>
+                            <label>Valor Venda (R$)</label>
+                            <input type="number" step="0.01" id="fp_vvenda" value="${prod?.valorVenda || ''}" required>
                         </div>
+                    </div>
 
-                        <div style="display:flex; gap:20px; margin-bottom:20px">
-                            <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_disp" ${prod?.disponivel !== false ? 'checked' : ''} style="width:16px"> Disponível</label>
-                            <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_ativo" ${prod?.ativo !== false ? 'checked' : ''} style="width:16px"> Ativo</label>
-                        </div>
+                    <div class="form-group">
+                        <label>Marca / Fornecedor</label>
+                        <input type="text" id="fp_marca" value="${prod?.marca || ''}">
+                    </div>
 
-                        <button type="submit" class="btn-primary" style="width:100%">GRAVAR PRODUTO</button>
-                        <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="navegar('Produto')">CANCELAR</button>
-                    </form>
-                </div>
+                    <div class="form-group">
+                        <label>Observações</label>
+                        <textarea id="fp_obs">${prod?.obs || ''}</textarea>
+                    </div>
+
+                    <div style="display:flex; gap:20px; margin-bottom:20px">
+                        <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_disp" ${prod?.disponivel !== false ? 'checked' : ''} style="width:16px"> Disponível</label>
+                        <label style="display:flex; align-items:center; gap:8px; text-transform:none"><input type="checkbox" id="fp_ativo" ${prod?.ativo !== false ? 'checked' : ''} style="width:16px"> Ativo</label>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width:100%">GRAVAR PRODUTO</button>
+                    <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="navegar('Produto')">CANCELAR</button>
+                </form>
             </div>
         </div>
     `;
@@ -268,9 +252,7 @@ function renderFormProduto(id = null) {
 function calcVenda() {
     const c = parseFloat(document.getElementById('fp_vcompra').value) || 0;
     const m = parseFloat(document.getElementById('fp_markup').value) || 0;
-    const res = (c * (1 + (m / 100))).toFixed(2);
-    const field = document.getElementById('fp_vvenda');
-    if(field) field.value = res;
+    document.getElementById('fp_vvenda').value = (c * (1 + (m / 100))).toFixed(2);
 }
 
 function gravarProduto(e) {
@@ -290,48 +272,39 @@ function gravarProduto(e) {
         disponivel: document.getElementById('fp_disp').checked,
         ativo: document.getElementById('fp_ativo').checked
     };
-    if(id) { const idx = list.findIndex(p => p.id == id); list[idx] = dados; } 
-    else { list.push(dados); }
+    if(id) { const idx = list.findIndex(p => p.id == id); list[idx] = dados; } else { list.push(dados); }
     setData(PROD_KEY, list); navegar('Produto');
 }
 
 // --- CONFIGURAÇÕES ---
 function renderConfiguracoes(aba, sub = 'cadastros') {
-    const perms = usuarioLogado.permissoes || [];
     app.innerHTML = `
         ${renderHeader()}
-        <div class="content-wrapper">
-            <nav class="nav-menu">
-                ${BOTOES_MENU.filter(item => perms.includes(item.id)).map(item => `
-                    <button class="nav-btn ${item.id === 'config' ? 'active' : ''}" onclick="navegar('${item.tela}')">${item.label}</button>
-                `).join('')}
-            </nav>
-            <div class="container wide">
-                <h2>Configurações</h2>
-                <div class="tabs-container">
-                    <button class="tab-btn ${aba === 'gerais' ? 'active' : ''}" onclick="navegar('Configuracoes', 'gerais')">Gerais</button>
-                    <button class="tab-btn ${aba === 'usuarios' ? 'active' : ''}" onclick="navegar('Configuracoes', 'usuarios')">Usuários</button>
-                </div>
-                <div id="cfg_content">
-                    ${aba === 'gerais' ? `
-                        <div class="sub-tabs"><button class="sub-tab-btn active">Gerais</button></div>
-                        <div style="background:#222; padding:25px; border-radius:8px; border:1px solid var(--border)">
-                            <h3 style="margin-top:0; font-size:1rem; color:var(--primary)">Preferências</h3>
-                            <div style="display:flex; align-items:center; gap:12px">
-                                <input type="checkbox" id="c_ordem" ${getData(CFG_KEY).controlaOrdem ? 'checked' : ''} onchange="setData(CFG_KEY, {controlaOrdem: this.checked})" style="width:18px; height:18px; cursor:pointer">
-                                <label for="c_ordem" style="text-transform:none; margin:0; cursor:pointer; font-size:0.9rem">Controla ordem de chegada</label>
-                                <i class="fas fa-info-circle" style="color:var(--primary); cursor:help" title="Habilita módulo de fila"></i>
-                            </div>
+        <div class="container wide">
+            <h2>Configurações</h2>
+            <div class="tabs-container">
+                <button class="tab-btn ${aba === 'gerais' ? 'active' : ''}" onclick="navegar('Configuracoes', 'gerais')">Gerais</button>
+                <button class="tab-btn ${aba === 'usuarios' ? 'active' : ''}" onclick="navegar('Configuracoes', 'usuarios')">Usuários</button>
+            </div>
+            <div id="cfg_content">
+                ${aba === 'gerais' ? `
+                    <div class="sub-tabs"><button class="sub-tab-btn active">Gerais</button></div>
+                    <div style="background:#222; padding:25px; border-radius:8px; border:1px solid var(--border)">
+                        <h3 style="margin-top:0; font-size:1rem; color:var(--primary)">Preferências</h3>
+                        <div style="display:flex; align-items:center; gap:12px">
+                            <input type="checkbox" id="c_ordem" ${getData(CFG_KEY).controlaOrdem ? 'checked' : ''} onchange="setData(CFG_KEY, {controlaOrdem: this.checked})" style="width:18px; height:18px; cursor:pointer">
+                            <label for="c_ordem" style="text-transform:none; margin:0; cursor:pointer; font-size:0.9rem">Controla ordem de chegada</label>
+                            <i class="fas fa-info-circle info-icon" title="Habilita módulo de fila"></i>
                         </div>
-                    ` : ''}
-                    ${aba === 'usuarios' ? `
-                        <div class="sub-tabs">
-                            <button class="sub-tab-btn ${sub === 'cadastros' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'cadastros')">Cadastros</button>
-                            ${usuarioLogado.tipo === 'Administrador' ? `<button class="sub-tab-btn ${sub === 'perfis' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'perfis')">Perfis</button>` : ''}
-                        </div>
-                        ${sub === 'cadastros' ? renderTabelaUsers() : renderPerfis()}
-                    ` : ''}
-                </div>
+                    </div>
+                ` : ''}
+                ${aba === 'usuarios' ? `
+                    <div class="sub-tabs">
+                        <button class="sub-tab-btn ${sub === 'cadastros' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'cadastros')">Cadastros</button>
+                        ${usuarioLogado.tipo === 'Administrador' ? `<button class="sub-tab-btn ${sub === 'perfis' ? 'active' : ''}" onclick="renderConfiguracoes('usuarios', 'perfis')">Perfis</button>` : ''}
+                    </div>
+                    ${sub === 'cadastros' ? renderTabelaUsers() : renderPerfis()}
+                ` : ''}
             </div>
         </div>
     `;
@@ -385,31 +358,28 @@ function renderFormUsuario(id = null) {
     const user = id ? getData(DB_KEY).find(u => u.id == id) : null;
     const isFirst = !usuarioLogado;
     app.innerHTML = `
-        ${!isFirst ? renderHeader() : ''}
-        <div class="${!isFirst ? 'content-wrapper' : ''}">
-            <div class="view-centered">
-                <div class="container" style="max-width:550px">
-                    <h2>${user ? 'EDITAR' : 'NOVO'} USUÁRIO</h2>
-                    <form onsubmit="salvarUser(event)">
-                        <input type="hidden" id="fu_id" value="${user?.id || ''}">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
-                            <div class="form-group"><label>Nome</label><input type="text" id="fu_nome" value="${user?.nomeCompleto || ''}" required></div>
-                            <div class="form-group"><label>Email</label><input type="email" id="fu_email" value="${user?.email || ''}" required></div>
-                            <div class="form-group"><label>Usuário</label><input type="text" id="fu_user" value="${user?.usuario || ''}" required></div>
-                            <div class="form-group">
-                                <label>Tipo</label>
-                                <select id="fu_tipo" ${isFirst || (user && usuarioLogado.tipo === 'Normal') ? 'disabled' : ''}>
-                                    <option value="Normal" ${user?.tipo === 'Normal' ? 'selected' : ''}>Normal</option>
-                                    <option value="Administrador" ${user?.tipo === 'Administrador' ? 'selected' : ''}>Administrador</option>
-                                </select>
-                            </div>
-                            <div class="form-group"><label>Senha</label><input type="password" id="fu_pass" required></div>
-                            <div class="form-group"><label>Confirmar</label><input type="password" id="fu_passc" required></div>
+        <div class="view-centered">
+            <div class="container" style="max-width:550px">
+                <h2>${user ? 'EDITAR' : 'NOVO'} USUÁRIO</h2>
+                <form onsubmit="salvarUser(event)">
+                    <input type="hidden" id="fu_id" value="${user?.id || ''}">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
+                        <div class="form-group"><label>Nome</label><input type="text" id="fu_nome" value="${user?.nomeCompleto || ''}" required></div>
+                        <div class="form-group"><label>Email</label><input type="email" id="fu_email" value="${user?.email || ''}" required></div>
+                        <div class="form-group"><label>Usuário</label><input type="text" id="fu_user" value="${user?.usuario || ''}" required></div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="fu_tipo" ${isFirst || (user && usuarioLogado.tipo === 'Normal') ? 'disabled' : ''}>
+                                <option value="Normal" ${user?.tipo === 'Normal' ? 'selected' : ''}>Normal</option>
+                                <option value="Administrador" ${user?.tipo === 'Administrador' ? 'selected' : ''}>Administrador</option>
+                            </select>
                         </div>
-                        <button type="submit" class="btn-primary" style="width:100%; margin-top:10px">GRAVAR</button>
-                        <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="${isFirst ? "navegar('Login')" : "navegar('Configuracoes', 'usuarios')" }">CANCELAR</button>
-                    </form>
-                </div>
+                        <div class="form-group"><label>Senha</label><input type="password" id="fu_pass" required></div>
+                        <div class="form-group"><label>Confirmar</label><input type="password" id="fu_passc" required></div>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width:100%; margin-top:10px">GRAVAR</button>
+                    <button type="button" class="btn-outline" style="width:100%; margin-top:10px" onclick="${isFirst ? "navegar('Login')" : "navegar('Configuracoes', 'usuarios')" }">CANCELAR</button>
+                </form>
             </div>
         </div>
     `;
